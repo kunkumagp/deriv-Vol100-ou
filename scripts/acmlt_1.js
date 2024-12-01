@@ -93,55 +93,64 @@ function startWebSocket() {
             }, 3000);
         }
 
-        if (response.msg_type === 'proposal_open_contract' && response.proposal_open_contract.contract_id === lastTradeId) {
-            const contract = response.proposal_open_contract;
+        console.log('response - ',response);
+        
 
-            if (contract.is_sold) {
-                const profit = contract.profit;
-                const result = profit > 0 ? 'Win' : 'Loss';
+        if(response.msg_type === 'proposal_open_contract'){
+            if(response.proposal_open_contract.contract_id === lastTradeId){
+                const contract = response.proposal_open_contract;
 
-                output.innerHTML += `Trade Result: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">${result}</span>, Profit: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">$${profit.toFixed(2)}</span>\n-------------------------------------\n`;
+                if (contract.is_sold) {
+                    const profit = contract.profit;
+                    const result = profit > 0 ? 'Win' : 'Loss';
 
-                if( profit > 0){
-                    if(newStake != stake){
-                        newStake = stake;
-                    }      
-                    totalProfitAmount = totalProfitAmount + profit;
-                    winTradeCount = winTradeCount+1;    
-                } else {
-                    totalLossAmount = totalLossAmount + profit;
-                    lossTradeCount = lossTradeCount+1;
-                    newStake = newStake * 5.5;
+                    output.innerHTML += `Trade Result: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">${result}</span>, Profit: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">$${profit.toFixed(2)}</span>\n-------------------------------------\n`;
 
-                }
-                lossAmount = lossAmount + profit
-                if(lossAmount > 0){lossAmount = 0;}
+                    if( profit > 0){
+                        if(newStake != stake){
+                            newStake = stake;
+                        }      
+                        totalProfitAmount = totalProfitAmount + profit;
+                        winTradeCount = winTradeCount+1;    
+                    } else {
+                        totalLossAmount = totalLossAmount + profit;
+                        lossTradeCount = lossTradeCount+1;
+                        newStake = newStake * 5.5;
 
-                newProfit = totalProfitAmount + totalLossAmount;
-                const spanColor = newProfit > 0 ? 'green' : 'red';
-                totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
-                
-                if( profit > 0){
-                    // Repeat the process by calling requestTicksHistory again after updating results
-                    scriptRunInLoop(true);      
+                    }
+                    lossAmount = lossAmount + profit
+                    if(lossAmount > 0){lossAmount = 0;}
+
+                    newProfit = totalProfitAmount + totalLossAmount;
+                    const spanColor = newProfit > 0 ? 'green' : 'red';
+                    totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
+                    
+                    if( profit > 0){
+                        // Repeat the process by calling requestTicksHistory again after updating results
+                        scriptRunInLoop(true);      
+                    } else {
+                        setTimeout(() => {
+                            // Repeat the process by calling requestTicksHistory again after updating results
+                            scriptRunInLoop(false);      
+                        }, 2000);
+                    }
+
+                    
                 } else {
                     setTimeout(() => {
-                        // Repeat the process by calling requestTicksHistory again after updating results
-                        scriptRunInLoop(false);      
-                    }, 2000);
+                        fetchTradeDetails(lastTradeId);
+                    }, 3000);
                 }
-
-                
             }
-
-
-        } 
+            
+        }
     
     };
 
     ws.onclose = function () {
         console.log('Connection closed');
-        output.innerHTML += 'Connection closed\n';
+        output.innerHTML += 'Connection closed\n-----------------------------\n\n';
+        console.log('-----------------------------\n');
     };
 
     ws.onerror = function (err) {
@@ -156,6 +165,20 @@ function startWebSocket() {
         } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
             requestTicksHistory(market); 
         } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
+
+                let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
+
+
+                text += `\n-----------------------------\n`;
+                results.innerHTML += text;
+
+
+                    // let text = totalResults.innerHTML.replaceAll(/\n/g,", ");
+                    // text += `\n-----------------------------\n`;
+
+                    // results.innerHTML += text;
+
+
                 webSocketConnectionStop();
                 setTimeout(() => {
                     webSocketConnectionStart();

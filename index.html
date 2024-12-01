@@ -19,10 +19,14 @@
             <button class="btn btn-default" id="startWebSocket">Start WebSocket</button>
         </div>
         <br/>
-        <pre id="totalResults" style="text-align: left;">Total Trade Count: 0 <br/>Win Count: 0 <br/>Loss Count: 0 <br/>Profit: $0 <br/>Loss: $0 <br/><br/>-----------------------------<br/>Loss Amount: $0 <br/>New Profit : $0  <br/></pre> <!-- For displaying the WebSocket data -->
-
-        <pre id="output" style="text-align: left; max-height: 500px;"></pre> <!-- For displaying the WebSocket data -->
-
+        <div class="row">
+            <div class="col-md-6">
+                <pre id="totalResults" style="text-align: left;">Total Trade Count: 0 <br/>Win Count: 0 <br/>Loss Count: 0 <br/>Profit: $0 <br/>Loss: $0 <br/><br/>-----------------------------<br/>Loss Amount: $0 <br/>New Profit : $0  <br/></pre> <!-- For displaying the WebSocket data -->
+                <pre id="results" style="text-align: left; max-height: 500px;"></pre> <!-- For displaying the WebSocket data -->
+            </div>
+            <div class="col-md-6"><pre id="output" style="text-align: left; max-height: 700px;"></pre> <!-- For displaying the WebSocket data --></div>
+        </div>
+        
         
     </div>
     <script src="main.js"></script>
