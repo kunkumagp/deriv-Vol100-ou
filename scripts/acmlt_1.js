@@ -38,7 +38,7 @@ function startWebSocket() {
     const output = document.getElementById('output'); // For displaying WebSocket messages
     ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
     let newStake = stake;
-
+    const cutofPercentages = 10;
     let totalProfitAmount = 0;
     let totalLossAmount = 0;
     let totalTradeCount = 0;
@@ -46,6 +46,8 @@ function startWebSocket() {
     let lossTradeCount = 0;
     let newProfit = 0 ;
     let lossAmount = 0;
+    let lastDigit = 0;
+    let maxDecimalCount = 0;
 
     ws.onopen = function () {
         // Authenticate
@@ -53,23 +55,84 @@ function startWebSocket() {
         output.innerHTML += 'WebSocket connection opened.\n-------------------------------------\n';
     };
 
+    
+
     ws.onmessage = function (event) { 
         const response = JSON.parse(event.data);
 
         if (response.msg_type === 'authorize') {
             console.log('Authorization successful.');
+            subscribeToTicks(market); // Subscribe to live ticks
+        }
+
+        if (response.msg_type === 'tick') {
+            const tickData = response.tick;
+            // const lastDigit = parseInt(tickData.quote.toString().slice(-1), 10);
+            lastDigit = getLastDigit(tickData.quote);
             requestTicksHistory(market);
+
+            console.log("Received tick:", tickData);
+
+            // You can now use this last digit data for your logic
         }
 
         if (response.msg_type === 'history') {
             // console.log(response.history.prices);
 
             const lastDigitList = response.history.prices;
+            maxDecimalCount = getMaxDecimals(lastDigitList);
+
             const percentages = calculateLastDigitPercentages(lastDigitList);
+            const lastDigit = getLastDigit(lastDigitList[lastDigitList.length - 1], maxDecimalCount) ;
             console.log("Percentages of last digits (0-9):", percentages);
+            console.log("Last Digit : ", lastDigit);
+
+            
+            // chart(percentages, cutofPercentages);
+            // console.log("Last Digit : ", lastDigit);
+
+            // if( (percentages[0] < cutofPercentages) && (percentages[1] < cutofPercentages)){
+            //     placeTrade('DIGITOVER', newStake);
+            // } else if( (percentages[0] < cutofPercentages) && (percentages[1] > cutofPercentages)){
+            //     if(lastDigit == percentages[0]){
+            //         placeTrade('DIGITOVER', newStake);
+            //     } else {
+            //         setTimeout(() => {
+            //             requestTicksHistory(market);
+            //         }, 3000);
+            //     }
+            // } else if( (percentages[0] > cutofPercentages) && (percentages[1] < cutofPercentages)){
+            //     if(lastDigit == percentages[1]){
+            //         placeTrade('DIGITOVER', newStake);
+            //     } else {
+            //         setTimeout(() => {
+            //             requestTicksHistory(market);
+            //         }, 3000);
+            //     }
+            // } else if( (percentages[0] > cutofPercentages) && (percentages[1] > cutofPercentages)){
+            //     if(lastDigit == percentages[0] || lastDigit == percentages[1]){
+            //         placeTrade('DIGITOVER', newStake);
+            //     } else {
+            //         setTimeout(() => {
+            //             requestTicksHistory(market);
+            //         }, 3000);
+            //     }
+            // }
+
+            console.log('0 value : ',percentages[0]);
+            console.log('1 value : ',percentages[1]);
             
 
-            placeTrade('DIGITOVER', newStake);
+
+            if( (percentages[0] < cutofPercentages) && (percentages[1] < cutofPercentages)){
+                placeTrade('DIGITOVER', newStake);
+            } else {
+                setTimeout(() => {
+                    requestTicksHistory(market);
+                }, 3000);
+            }
+
+            // placeTrade('DIGITOVER', newStake);
         }
 
         if (response.msg_type === 'proposal') {
@@ -92,9 +155,6 @@ function startWebSocket() {
                 fetchTradeDetails(lastTradeId);
             }, 3000);
         }
-
-        console.log('response - ',response);
-        
 
         if(response.msg_type === 'proposal_open_contract'){
             if(response.proposal_open_contract.contract_id === lastTradeId){
@@ -158,33 +218,37 @@ function startWebSocket() {
         output.innerHTML += `WebSocket error: ${err.message}\n`;
     };
 
+    const subscribeToTicks = (symbol) => {
+        const ticksSubscriptionRequest = {
+            ticks: symbol,
+            subscribe: 1 // Enable subscription for live updates
+        };
+        ws.send(JSON.stringify(ticksSubscriptionRequest));
+    };
+
     const scriptRunInLoop = (isLastTradeWin) =>{
 
-        if(totalTradeCount < tradeCountsPerRun){
+        if(tradeCountsPerRun != null){
+            if(totalTradeCount < tradeCountsPerRun){
+                requestTicksHistory(market); 
+            } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
+                requestTicksHistory(market); 
+            } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
+    
+                    let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
+                    text += `\n-----------------------------\n`;
+                    results.innerHTML += text;
+    
+                    webSocketConnectionStop();
+                    setTimeout(() => {
+                        webSocketConnectionStart();
+                    }, 2000);
+            }
+        } else {
             requestTicksHistory(market); 
-        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
-            requestTicksHistory(market); 
-        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
-
-                let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
-
-
-                text += `\n-----------------------------\n`;
-                results.innerHTML += text;
-
-
-                    // let text = totalResults.innerHTML.replaceAll(/\n/g,", ");
-                    // text += `\n-----------------------------\n`;
-
-                    // results.innerHTML += text;
-
-
-                webSocketConnectionStop();
-                setTimeout(() => {
-                    webSocketConnectionStart();
-                }, 2000);
         }
-        //  
+
+        
 
     };
 
@@ -241,6 +305,11 @@ function startWebSocket() {
 
 }
 
+function getLastDigit(N, maxDecimalCount) {
+    const str = N.toFixed(maxDecimalCount); // Format the number to the specified decimal places
+    const lastChar = str.charAt(str.length - 1); // Get the last character
+    return parseInt(lastChar, 10); // Convert it back to an integer
+}
 
 
 // Calculate last digit percentages
@@ -259,4 +328,62 @@ function calculateLastDigitPercentages(numbers) {
 
     const percentages = digitCounts.map(count => (count / totalNumbers) * 100);
     return percentages;
+}
+
+function chart(percentages, cutofPercentages){
+
+    var xValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    var yValues = percentages;
+
+    var redColor = 'red';
+    var greenColor = 'green';
+    var blueColor = 'blue';
+
+    var barColors = [];
+
+    if((percentages[0] < cutofPercentages) && percentages[1] < cutofPercentages){
+        barColors = ["green", "green", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue"];
+    } else if((percentages[0] < cutofPercentages) && percentages[1] >= cutofPercentages){
+        barColors = ["green", "red", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue"];
+    } else if((percentages[0] >= cutofPercentages) && percentages[1] < cutofPercentages){
+        barColors = ["red", "green", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue"];
+    } else if((percentages[0] >= cutofPercentages) && percentages[1] >= cutofPercentages){
+        barColors = ["red", "red", "blue", "blue", "blue", "blue", "blue", "blue", "blue", "blue"];
+    }
+
+    // var barColors = ["red", "green","blue","orange","brown"];
+
+    new Chart("myChart", {
+    type: "bar",
+    data: {
+        labels: xValues,
+        datasets: [{
+        backgroundColor: barColors,
+        data: yValues
+        }]
+    },
+    options: {
+        legend: {display: false},
+        title: {
+        display: true,
+        text: "Last Digit Stats"
+        }
+    }
+    });
+
+}
+
+function getMaxDecimals(numbers) {
+    let maxDecimals = 0;
+
+    numbers.forEach((number) => {
+        if (Math.floor(number) !== number) { // Check if it has decimals
+            const decimalPlaces = number.toString().split('.')[1]?.length || 0;
+            if (decimalPlaces > maxDecimals) {
+                maxDecimals = decimalPlaces;
+            }
+        }
+    });
+
+    return maxDecimals;
 }
