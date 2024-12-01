@@ -34,7 +34,6 @@ runAccumulatorScript();
 function startWebSocket() {
 
     const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
-    const market = 'R_100'; // Volatility 10 Index 1s
     const output = document.getElementById('output'); // For displaying WebSocket messages
     ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
     let newStake = stake;
@@ -107,19 +106,32 @@ function startWebSocket() {
                     output.innerHTML += `Trade Result: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">${result}</span>, Profit: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">$${profit.toFixed(2)}</span>\n-------------------------------------\n`;
 
                     if( profit > 0){
-                        if(newStake != stake){
-                            newStake = stake;
-                        }      
+                        // if(newStake != stake){
+                        //     newStake = stake;
+                        // }      
                         totalProfitAmount = totalProfitAmount + profit;
                         winTradeCount = winTradeCount+1;    
                     } else {
                         totalLossAmount = totalLossAmount + profit;
                         lossTradeCount = lossTradeCount+1;
-                        newStake = newStake * 5.5;
+                        // newStake = newStake * 5.5;
 
                     }
                     lossAmount = lossAmount + profit
-                    if(lossAmount > 0){lossAmount = 0;}
+
+
+                    if(lossAmount < 0){
+                        // if(newStake == stake){
+                        //     newStake = newStake * 2;
+                        // } else if(newStake > stake){
+                        //     newStake = newStake;
+                        // }
+                    } else if(lossAmount > 0){
+                        lossAmount = 0;
+                        // newStake = stake;
+                    }
+
+                    
 
                     newProfit = totalProfitAmount + totalLossAmount;
                     const spanColor = newProfit > 0 ? 'green' : 'red';
@@ -132,7 +144,7 @@ function startWebSocket() {
                         setTimeout(() => {
                             // Repeat the process by calling requestTicksHistory again after updating results
                             scriptRunInLoop(false);      
-                        }, 2000);
+                        }, 4000);
                     }
 
                     
@@ -160,31 +172,30 @@ function startWebSocket() {
 
     const scriptRunInLoop = (isLastTradeWin) =>{
 
-        if(totalTradeCount < tradeCountsPerRun){
-            requestTicksHistory(market); 
-        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
-            requestTicksHistory(market); 
-        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
-
-                let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
-
-
-                text += `\n-----------------------------\n`;
-                results.innerHTML += text;
-
-
-                    // let text = totalResults.innerHTML.replaceAll(/\n/g,", ");
-                    // text += `\n-----------------------------\n`;
-
-                    // results.innerHTML += text;
-
-
-                webSocketConnectionStop();
+        if(tradeCountsPerRun != null){
+            if(totalTradeCount < tradeCountsPerRun  && isLastTradeWin == false){
                 setTimeout(() => {
-                    webSocketConnectionStart();
-                }, 2000);
+                    requestTicksHistory(market); 
+                }, 5000);
+            } else if(totalTradeCount < tradeCountsPerRun  && isLastTradeWin == true){
+                    requestTicksHistory(market); 
+            } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
+                requestTicksHistory(market); 
+            } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
+    
+                    let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
+                    text += `\n-----------------------------\n`;
+                    results.innerHTML += text;
+    
+                    webSocketConnectionStop();
+                    setTimeout(() => {
+                        webSocketConnectionStart();
+                    }, 5000);
+            }
+        } else {
+                requestTicksHistory(market); 
         }
-        //  
+        
 
     };
 
