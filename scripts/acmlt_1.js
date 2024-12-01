@@ -2,24 +2,33 @@
 function runAccumulatorScript() {
     if (isRunning) {
         // Stop the loop and close the WebSocket
-        isRunning = false;
-        clearInterval(intervalId); // Stop the interval loop
-        if (ws) {
-            ws.close();
-            ws = null;
-        }
-        console.log('WebSocket connection stopped.');
-        document.getElementById('output').textContent += 'WebSocket connection stopped.\n';
-        button.innerHTML = "Start WebSocket";
+        webSocketConnectionStop();
     } else {
         // Start the loop and open the WebSocket
-        isRunning = true;
-        startWebSocket();
-        console.log('WebSocket connection started.');
-        document.getElementById('output').textContent += 'WebSocket connection started.\n';
-        button.innerHTML = "Stop WebSocket";
+        webSocketConnectionStart();
     }
 }
+
+function webSocketConnectionStart(){
+    isRunning = true;
+    startWebSocket();
+    console.log('WebSocket connection started.');
+    document.getElementById('output').textContent += 'WebSocket connection started.\n';
+    button.innerHTML = "Stop WebSocket";
+};
+
+function webSocketConnectionStop(){
+    isRunning = false;
+    clearInterval(intervalId); // Stop the interval loop
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+    console.log('WebSocket connection stopped.');
+    document.getElementById('output').textContent += 'WebSocket connection stopped.\n';
+    button.innerHTML = "Start WebSocket";
+};
+
 runAccumulatorScript();
 
 function startWebSocket() {
@@ -38,11 +47,10 @@ function startWebSocket() {
     let newProfit = 0 ;
     let lossAmount = 0;
 
-
     ws.onopen = function () {
         // Authenticate
         getAuthentication();
-        output.innerHTML += 'WebSocket connection opened.\n';
+        output.innerHTML += 'WebSocket connection opened.\n-------------------------------------\n';
     };
 
     ws.onmessage = function (event) { 
@@ -75,17 +83,14 @@ function startWebSocket() {
         }
 
 
-        console.log(response);
-        
-
         if (response.msg_type === 'buy') {
             console.log('Trade Successful:', response);
             lastTradeId = response.buy.contract_id; // Save the trade's contract ID
-            output.innerHTML += `Trade started: Contract ID = ${lastTradeId}\n`;
+            output.innerHTML += `Trade started:\nContract ID = ${lastTradeId}\nStake = ${response.buy.buy_price}\n`;
             totalTradeCount = totalTradeCount + 1
             setTimeout(() => {
                 fetchTradeDetails(lastTradeId);
-            }, 4000);
+            }, 3000);
         }
 
         if (response.msg_type === 'proposal_open_contract' && response.proposal_open_contract.contract_id === lastTradeId) {
@@ -95,7 +100,7 @@ function startWebSocket() {
                 const profit = contract.profit;
                 const result = profit > 0 ? 'Win' : 'Loss';
 
-                output.innerHTML += `Trade Result: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">${result}</span>, Profit: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">$${profit.toFixed(2)}</span>\n`;
+                output.innerHTML += `Trade Result: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">${result}</span>, Profit: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">$${profit.toFixed(2)}</span>\n-------------------------------------\n`;
 
                 if( profit > 0){
                     if(newStake != stake){
@@ -106,44 +111,23 @@ function startWebSocket() {
                 } else {
                     totalLossAmount = totalLossAmount + profit;
                     lossTradeCount = lossTradeCount+1;
-
-                    // if(totalLossAmount >= (100 * 0.15)){
-                    //     console.log('close');
-                        
-                    //     runAccumulatorScript();
-                    // } else {
-                    //     newStake = newStake * 5;
-                    // }
-                    newStake = newStake * 5;
+                    newStake = newStake * 5.5;
 
                 }
                 lossAmount = lossAmount + profit
                 if(lossAmount > 0){lossAmount = 0;}
 
                 newProfit = totalProfitAmount + totalLossAmount;
-
-                // if(lossAmount < 0){
-                //     if(Math.abs(lossAmount) > stake){
-                //         newStake = Math.abs(lossAmount) * 2;
-                //     } else {
-                //         newStake = stake * 2;
-                //     }
-                // } else {
-                //     if(newStake != stake){
-                //         newStake = stake;
-                //     }
-                // }
-
                 const spanColor = newProfit > 0 ? 'green' : 'red';
-                totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\n\Win Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
+                totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
                 
                 if( profit > 0){
                     // Repeat the process by calling requestTicksHistory again after updating results
-                    requestTicksHistory(market);        
+                    scriptRunInLoop(true);      
                 } else {
                     setTimeout(() => {
                         // Repeat the process by calling requestTicksHistory again after updating results
-                        requestTicksHistory(market);
+                        scriptRunInLoop(false);      
                     }, 2000);
                 }
 
@@ -151,7 +135,7 @@ function startWebSocket() {
             }
 
 
-        }
+        } 
     
     };
 
@@ -163,6 +147,22 @@ function startWebSocket() {
     ws.onerror = function (err) {
         console.error('WebSocket error:', err);
         output.innerHTML += `WebSocket error: ${err.message}\n`;
+    };
+
+    const scriptRunInLoop = (isLastTradeWin) =>{
+
+        if(totalTradeCount < tradeCountsPerRun){
+            requestTicksHistory(market); 
+        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
+            requestTicksHistory(market); 
+        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
+                webSocketConnectionStop();
+                setTimeout(() => {
+                    webSocketConnectionStart();
+                }, 2000);
+        }
+        //  
+
     };
 
 
@@ -200,8 +200,23 @@ function startWebSocket() {
         ws.send(JSON.stringify(tradeRequest));
     };
 
-}
+    // Function to fetch trade details by Contract ID
+    const fetchTradeDetails = (contractId) => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.error("WebSocket is not open.");
+            return;
+        }
+    
+        const contractDetailsRequest = {
+            proposal_open_contract: 1,
+            contract_id: contractId,
+        };
+    
+        console.log("Fetching trade details for Contract ID:", contractId);
+        ws.send(JSON.stringify(contractDetailsRequest));
+    }
 
+}
 
 
 
@@ -221,20 +236,4 @@ function calculateLastDigitPercentages(numbers) {
 
     const percentages = digitCounts.map(count => (count / totalNumbers) * 100);
     return percentages;
-}
-
-// Function to fetch trade details by Contract ID
-function fetchTradeDetails(contractId) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        console.error("WebSocket is not open.");
-        return;
-    }
-
-    const contractDetailsRequest = {
-        proposal_open_contract: 1,
-        contract_id: contractId,
-    };
-
-    console.log("Fetching trade details for Contract ID:", contractId);
-    ws.send(JSON.stringify(contractDetailsRequest));
 }

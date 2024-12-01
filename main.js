@@ -3,6 +3,8 @@ let ws; // Declare WebSocket outside to manage it globally
 let intervalId; // To store the interval ID
 let stake = 1; // Trade stake amount
 let intervalTime = 3000; // Interval for requesting ticks history
+let tradeCountsPerRun = 10; // Number of history data points to fetch
+
 const button = document.getElementById('startWebSocket');
 const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
 const market = 'R_100'; // Volatility 10 Index 1s
