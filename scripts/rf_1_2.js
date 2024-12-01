@@ -1,37 +1,36 @@
-let isRunning = false; // Flag to track the script state
-let ws; // Declare WebSocket outside to manage it globally
-let intervalId; // To store the interval ID
-const intervalTime = 10000; // Interval for requesting ticks history
-const stake = 1; // Trade stake amount
-const historyDataCount = 11;
-
-const button = document.getElementById('startWebSocket');
-// button.addEventListener('click', toggleWebSocket);
 
 
 function runRiseAndFallScript() {
     if (isRunning) {
         // Stop the loop and close the WebSocket
-        isRunning = false;
-        clearInterval(intervalId); // Stop the interval loop
-        if (ws) {
-            ws.close();
-            ws = null;
-        }
-        console.log('WebSocket connection stopped.');
-        document.getElementById('output').textContent += 'WebSocket connection stopped.\n';
-        button.innerHTML = "Start WebSocket";
+        webSocketConnectionStop();
     } else {
         // Start the loop and open the WebSocket
-        isRunning = true;
-        startWebSocket();
-        console.log('WebSocket connection started.');
-        document.getElementById('output').textContent += 'WebSocket connection started.\n';
-        button.innerHTML = "Stop WebSocket";
+        webSocketConnectionStart();
     }
 }
-runRiseAndFallScript();
 
+function webSocketConnectionStart(){
+    isRunning = true;
+    startWebSocket();
+    console.log('WebSocket connection started.');
+    document.getElementById('output').textContent += 'WebSocket connection started.\n';
+    button.innerHTML = "Stop WebSocket";
+};
+
+function webSocketConnectionStop(){
+    isRunning = false;
+    clearInterval(intervalId); // Stop the interval loop
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+    console.log('WebSocket connection stopped.');
+    document.getElementById('output').textContent += 'WebSocket connection stopped.\n';
+    button.innerHTML = "Start WebSocket";
+};
+
+runRiseAndFallScript();
 
 function startWebSocket() {
     const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
@@ -49,6 +48,9 @@ function startWebSocket() {
 
     ws.onmessage = function (event) {
         const response = JSON.parse(event.data);
+
+        console.log(response);
+        
 
         if (response.error) {
             console.error(response.error.message);

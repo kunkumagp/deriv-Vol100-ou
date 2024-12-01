@@ -1,5 +1,5 @@
 
-function runAccumulatorScript() {
+function runOverUnderScript() {
     if (isRunning) {
         // Stop the loop and close the WebSocket
         webSocketConnectionStop();
@@ -29,7 +29,7 @@ function webSocketConnectionStop(){
     button.innerHTML = "Start WebSocket";
 };
 
-runAccumulatorScript();
+runOverUnderScript();
 
 function startWebSocket() {
 
@@ -58,10 +58,19 @@ function startWebSocket() {
 
         if (response.msg_type === 'authorize') {
             console.log('Authorization successful.');
-            makeTrades();
-
+            requestTicksHistory(market);
         }
 
+        if (response.msg_type === 'history') {
+            // console.log(response.history.prices);
+
+            const lastDigitList = response.history.prices;
+            const percentages = calculateLastDigitPercentages(lastDigitList);
+            console.log("Percentages of last digits (0-9):", percentages);
+            
+
+            placeTrade('DIGITOVER', newStake);
+        }
 
         if (response.msg_type === 'proposal') {
             console.log('Proposal Response:', response.proposal);
@@ -84,7 +93,7 @@ function startWebSocket() {
             }, 3000);
         }
 
-        console.log(response);
+        console.log('response - ',response);
         
 
         if(response.msg_type === 'proposal_open_contract'){
@@ -98,11 +107,16 @@ function startWebSocket() {
                     output.innerHTML += `Trade Result: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">${result}</span>, Profit: <span style="color: ${profit > 0 ? 'green' : 'red'}; font-weight: 900;">$${profit.toFixed(2)}</span>\n-------------------------------------\n`;
 
                     if( profit > 0){
+                        if(newStake != stake){
+                            newStake = stake;
+                        }      
                         totalProfitAmount = totalProfitAmount + profit;
                         winTradeCount = winTradeCount+1;    
                     } else {
                         totalLossAmount = totalLossAmount + profit;
                         lossTradeCount = lossTradeCount+1;
+                        newStake = newStake * 5.5;
+
                     }
                     lossAmount = lossAmount + profit
                     if(lossAmount > 0){lossAmount = 0;}
@@ -110,7 +124,17 @@ function startWebSocket() {
                     newProfit = totalProfitAmount + totalLossAmount;
                     const spanColor = newProfit > 0 ? 'green' : 'red';
                     totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
-                    // scriptRunInLoop(true);      
+                    
+                    if( profit > 0){
+                        // Repeat the process by calling requestTicksHistory again after updating results
+                        scriptRunInLoop(true);      
+                    } else {
+                        setTimeout(() => {
+                            // Repeat the process by calling requestTicksHistory again after updating results
+                            scriptRunInLoop(false);      
+                        }, 2000);
+                    }
+
                     
                 } else {
                     setTimeout(() => {
@@ -137,26 +161,31 @@ function startWebSocket() {
     const scriptRunInLoop = (isLastTradeWin) =>{
 
         if(totalTradeCount < tradeCountsPerRun){
-            makeTrades(); 
+            requestTicksHistory(market); 
         } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
-            makeTrades();
+            requestTicksHistory(market); 
         } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
-            let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
-            text += `\n-----------------------------\n`;
-            results.innerHTML += text;
 
-            webSocketConnectionStop();
-            setTimeout(() => {
-                webSocketConnectionStart();
-            }, 2000);
+                let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
+
+
+                text += `\n-----------------------------\n`;
+                results.innerHTML += text;
+
+
+                    // let text = totalResults.innerHTML.replaceAll(/\n/g,", ");
+                    // text += `\n-----------------------------\n`;
+
+                    // results.innerHTML += text;
+
+
+                webSocketConnectionStop();
+                setTimeout(() => {
+                    webSocketConnectionStart();
+                }, 2000);
         }
+        //  
 
-    };
-
-    const makeTrades = () => {
-        const tradeType = 'accumulator'; // Or 'MULTDOWN' for downward trades
-        const leverage = 50; // Example leverage
-        placeTrade(tradeType, newStake, leverage);
     };
 
 
@@ -166,22 +195,31 @@ function startWebSocket() {
         }));
     }
     
-    // Place a trade (called after signal analysis)
-    const placeTrade = (tradeType, tradeStake, leverage) => {
-        const tradeRequest = {
-            buy: 1,
-            price: tradeStake,
-            parameters: {
-                amount: tradeStake,
-                basis: 'stake',
-                contract_type: tradeType, // 'MULTUP' for upward or 'MULTDOWN' for downward
-                currency: 'USD',
-                symbol: market,
-                multiplier: leverage // Leverage/multiplier for Accumulator trades
-            }
+    const requestTicksHistory = (symbol) => {
+        const ticksHistoryRequest = {
+            ticks_history: symbol,
+            end: 'latest',
+            count: historyDataCount, // Increased count for a larger dataset (more ticks for better prediction)
+            style: 'ticks'
         };
-    
-        console.log('Sending trade request for Accumulator:', tradeRequest);
+        ws.send(JSON.stringify(ticksHistoryRequest));
+    };
+
+    // Place a trade (called after signal analysis)
+    const placeTrade = (tradeType, tradeStake) => {
+        const tradeRequest = {
+            proposal: 1,
+            amount: tradeStake, // $1 stake
+            basis: 'stake',
+            contract_type: tradeType, // 'DIGITOVER' or 'DIGITUNDER'
+            currency: 'USD',
+            duration: 1, // 1 tick
+            duration_unit: 't',
+            symbol: market, // Market: Volatility 100 Index
+            barrier: '1', // Predict last digit is 1
+        };
+
+        console.log('Sending trade request:', tradeRequest);
         ws.send(JSON.stringify(tradeRequest));
     };
 

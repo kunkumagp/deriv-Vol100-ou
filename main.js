@@ -3,7 +3,7 @@ let ws; // Declare WebSocket outside to manage it globally
 let intervalId; // To store the interval ID
 let stake = 1; // Trade stake amount
 let intervalTime = 3000; // Interval for requesting ticks history
-let tradeCountsPerRun = 3; // Number of history data points to fetch
+let tradeCountsPerRun = 10; // Number of history data points to fetch
 
 const button = document.getElementById('startWebSocket');
 const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
@@ -28,9 +28,13 @@ function loadScript(option) {
     script.type = "text/javascript";
 
     if (option === "rf_1") {
-        script.src = "./scripts/rf_1.js";  // Path to your Rise & Fall script
+        script.src = "./scripts/rf_1_2.js";  // Path to your Rise & Fall script
+    } else if (option === "ou_1") {
+        script.src = "./scripts/ou_1.js";  // Path to your Accumulator script
     } else if (option === "acmlt_1") {
         script.src = "./scripts/acmlt_1.js";  // Path to your Accumulator script
+    } else if (option === "md_1") {
+        script.src = "./scripts/md_1.js";  // Path to your Accumulator script
     }
 
     // Append the script to the document

@@ -1,5 +1,5 @@
 
-function runAccumulatorScript() {
+function runMatchesDifferScript() {
     if (isRunning) {
         // Stop the loop and close the WebSocket
         webSocketConnectionStop();
@@ -29,7 +29,8 @@ function webSocketConnectionStop(){
     button.innerHTML = "Start WebSocket";
 };
 
-runAccumulatorScript();
+runMatchesDifferScript();
+
 
 function startWebSocket() {
 
@@ -47,9 +48,19 @@ function startWebSocket() {
     let newProfit = 0 ;
     let lossAmount = 0;
 
+    let digitCounts = Array(10).fill(0); // Frequency counter for digits 0-9
+    let totalTicks = 0;
+
+    let lastDigitList = [];
+    let percentages = null;
+    let currentlastDigit = null;
+
+
     ws.onopen = function () {
         // Authenticate
-        getAuthentication();
+        ws.send(JSON.stringify({
+            authorize: apiToken
+        }));
         output.innerHTML += 'WebSocket connection opened.\n-------------------------------------\n';
     };
 
@@ -58,8 +69,24 @@ function startWebSocket() {
 
         if (response.msg_type === 'authorize') {
             console.log('Authorization successful.');
-            makeTrades();
+            // requestTicksHistory(market);
+            ticks();
+            // makeTrades();
+        }
 
+         // Handle tick updates
+         if (response.msg_type === 'tick') {
+            const tick = response.tick;
+            ticksHandle(tick);
+            requestTicksHistory(market);
+        }
+
+
+        if (response.msg_type === 'history') {
+            lastDigitList = response.history.prices;
+            percentages = calculateLastDigitPercentages(lastDigitList);
+            console.log("Percentages of last digits (0-9):", percentages);
+            makeTrades();
         }
 
 
@@ -73,7 +100,6 @@ function startWebSocket() {
             ws.send(JSON.stringify(buyRequest));
         }
 
-
         if (response.msg_type === 'buy') {
             console.log('Trade Successful:', response);
             lastTradeId = response.buy.contract_id; // Save the trade's contract ID
@@ -84,8 +110,6 @@ function startWebSocket() {
             }, 3000);
         }
 
-        console.log(response);
-        
 
         if(response.msg_type === 'proposal_open_contract'){
             if(response.proposal_open_contract.contract_id === lastTradeId){
@@ -110,7 +134,13 @@ function startWebSocket() {
                     newProfit = totalProfitAmount + totalLossAmount;
                     const spanColor = newProfit > 0 ? 'green' : 'red';
                     totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
-                    // scriptRunInLoop(true);      
+                    
+                    if( profit > 0){
+                        scriptRunInLoop(true);   
+                    } else {
+                        scriptRunInLoop(false); 
+                    }
+                    // requestTicksHistory(market);  
                     
                 } else {
                     setTimeout(() => {
@@ -120,8 +150,9 @@ function startWebSocket() {
             }
             
         }
-    
-    };
+
+       
+    }
 
     ws.onclose = function () {
         console.log('Connection closed');
@@ -134,56 +165,110 @@ function startWebSocket() {
         output.innerHTML += `WebSocket error: ${err.message}\n`;
     };
 
+
     const scriptRunInLoop = (isLastTradeWin) =>{
 
         if(totalTradeCount < tradeCountsPerRun){
-            makeTrades(); 
-        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
-            makeTrades();
-        } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
+            requestTicksHistory(market);
+        } else {
             let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
             text += `\n-----------------------------\n`;
             results.innerHTML += text;
-
             webSocketConnectionStop();
             setTimeout(() => {
                 webSocketConnectionStart();
             }, 2000);
         }
+    };
 
+
+    const requestTicksHistory = (symbol) => {
+        const ticksHistoryRequest = {
+            ticks_history: symbol,
+            end: 'latest',
+            count: 1000, // Increased count for a larger dataset (more ticks for better prediction)
+            style: 'ticks'
+        };
+        ws.send(JSON.stringify(ticksHistoryRequest));
+    };
+
+    const ticksHandle = (tick) =>{
+        currentlastDigit = parseInt(tick.quote.toString().slice(-1), 10); // Get the last digit
+        digitCounts[currentlastDigit]++; // Increment the counter for this digit
+        totalTicks++;
+
+        // Calculate percentages
+        const stats = digitCounts.map((count, digit) => ({
+            digit,
+            count,
+            percentage: ((count / totalTicks) * 100).toFixed(2),
+        }));
+
+        // Display stats
+        // output.innerHTML = `Total Ticks: ${totalTicks}\n` + stats
+        //     .map(stat => `Digit ${stat.digit}: ${stat.count} (${stat.percentage}%)`)
+        //     .join('\n');
+    }
+
+    const ticks = () => {
+        // Subscribe to tick updates
+        ws.send(JSON.stringify({
+            ticks: market,
+            subscribe: 1,
+        }));
     };
 
     const makeTrades = () => {
-        const tradeType = 'accumulator'; // Or 'MULTDOWN' for downward trades
-        const leverage = 50; // Example leverage
-        placeTrade(tradeType, newStake, leverage);
+        // lastDigitList = response.history.prices;
+        // percentages = calculateLastDigitPercentages(lastDigitList);
+
+        // Find the lowest value
+        // const lowest = Math.min(...percentages);
+
+        // // Find the highest value
+        const highest = Math.max(...percentages);
+
+        // // Find their indices
+        // const lowestIndex = percentages.indexOf(lowest);
+        const highestIndex = percentages.indexOf(highest);
+
+        // console.log('lowest - ', lowest);
+        // console.log('lowestIndex - ', lowestIndex);
+        // console.log('highest - ', highest);
+        // console.log('highestIndex - ', highestIndex);
+        // console.log('currentlastDigit - ', currentlastDigit);
+        // console.log('highestIndex - ', highestIndex);
+        
+        
+
+        const tradeType = 'DIGITDIFF'; // Or 'MULTDOWN' for downward trades
+        newStake = 10;
+        if(currentlastDigit == highestIndex){
+            placeTrade(tradeType, newStake, highestIndex);
+        }
     };
 
-
-    const getAuthentication = () => {
-        ws.send(JSON.stringify({
-            authorize: apiToken
-        }));
-    }
-    
     // Place a trade (called after signal analysis)
-    const placeTrade = (tradeType, tradeStake, leverage) => {
-        const tradeRequest = {
-            buy: 1,
-            price: tradeStake,
-            parameters: {
-                amount: tradeStake,
-                basis: 'stake',
-                contract_type: tradeType, // 'MULTUP' for upward or 'MULTDOWN' for downward
-                currency: 'USD',
-                symbol: market,
-                multiplier: leverage // Leverage/multiplier for Accumulator trades
-            }
+    const placeTrade = (tradeType, tradeStake, barrier) => {
+        const tradeParameters = {
+            amount: tradeStake, // Trade stake
+            basis: 'stake', // Stake type
+            contract_type: tradeType, // Contract type ('DIGITMATCH' or 'DIGITDIFF')
+            currency: 'USD', // Account currency
+            duration: 1, // Duration in ticks
+            duration_unit: 't', // Duration unit: ticks
+            symbol: 'R_100', // Market: Volatility 100 Index
+            barrier: barrier, // Single-digit barrier (0-9)
         };
-    
-        console.log('Sending trade request for Accumulator:', tradeRequest);
-        ws.send(JSON.stringify(tradeRequest));
+
+        ws.send(JSON.stringify({
+            proposal: 1, // Request a trade proposal
+            ...tradeParameters,
+        }));
+
+        console.log('Trade proposal request sent:', tradeParameters);
     };
+
 
     // Function to fetch trade details by Contract ID
     const fetchTradeDetails = (contractId) => {
@@ -203,7 +288,11 @@ function startWebSocket() {
 
 }
 
-
+function getLastDigit(N, maxDecimalCount) {
+    const str = N.toFixed(maxDecimalCount); // Format the number to the specified decimal places
+    const lastChar = str.charAt(str.length - 1); // Get the last character
+    return parseInt(lastChar, 10); // Convert it back to an integer
+}
 
 // Calculate last digit percentages
 function calculateLastDigitPercentages(numbers) {
