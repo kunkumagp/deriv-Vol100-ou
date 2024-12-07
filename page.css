@@ -1,0 +1,22 @@
+body{
+
+    background-color: rgb(29, 29, 29);
+    color: #FFF;
+}
+
+pre,
+button.btn-default,
+.form-control{
+    background-color: rgb(52, 52, 52);
+    border: none;
+    color: #FFF;
+}
+
+button.btn-default:hover,
+button.btn-default:active,
+button.btn-default:focus
+{
+    background-color: rgb(41, 36, 36);
+    border: none !important;
+    color: #FFF;
+}

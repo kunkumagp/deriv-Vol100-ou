@@ -4,10 +4,10 @@ let intervalId; // To store the interval ID
 let stake = 1; // Trade stake amount
 let intervalTime = 3000; // Interval for requesting ticks history
 let tradeCountsPerRun = 10; // Number of history data points to fetch
+let market = 'R_10'; // Volatility 10 Index 1s
 
 const button = document.getElementById('startWebSocket');
 const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
-const market = 'R_100'; // Volatility 10 Index 1s
 const output = document.getElementById('output'); // For displaying WebSocket messages
 const totalResults = document.getElementById('totalResults'); // For displaying WebSocket messages
 const results = document.getElementById('results'); // For displaying WebSocket messages
@@ -18,19 +18,26 @@ button.addEventListener('click', toggleWebSocket);
 function toggleWebSocket() {
     // Get the selected option value
     var selectedOption = document.getElementById("tradeOption").value;
+    var marketOption = document.getElementById("marketOption").value;
 
     // Load the corresponding script based on the selected option
-    loadScript(selectedOption);
+    loadScript(selectedOption, marketOption);
 }
 
-function loadScript(option) {
+function loadScript(option, marketOption) {
     var script = document.createElement("script");
     script.type = "text/javascript";
+
+    market = marketOption;
 
     if (option === "rf_1") {
         script.src = "./scripts/rf_1_2.js";  // Path to your Rise & Fall script
     } else if (option === "ou_1") {
         script.src = "./scripts/ou_1.js";  // Path to your Accumulator script
+    } else if (option === "ou_2") {
+        script.src = "./scripts/ou_2.js";  // Path to your Accumulator script
+    } else if (option === "ou_3") {
+        script.src = "./scripts/ou_3.js";  // Path to your Accumulator script
     } else if (option === "acmlt_1") {
         script.src = "./scripts/acmlt_1.js";  // Path to your Accumulator script
     } else if (option === "md_1") {
