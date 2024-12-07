@@ -53,9 +53,8 @@ function startWebSocket() {
     let initAccBalance = 0;
     let martingale = true;
     let tradeCountsPerRun = null;
-
-    let newStake = stake;
     let profitRate = 0.4; // 40% profit rate
+    let newStake = stake;
 
     ws.onopen = function () {
         // Authenticate
@@ -185,21 +184,22 @@ function startWebSocket() {
                     isTradeOpen = false;
 
                     if(martingale){
-                        if( profit > 0){
-                            // newStake = stake; 
-                            console.log(`Trade win`); 
+                        // if( profit > 0){
+                        //     newStake = stake;    
+                        // } else {
+                        //     newStake = newStake * 3;
+                        // }
 
-                            let result = calculateNextBet(stake, profitRate, lossAmount, 'win');
-                            console.log(`Next bet: $${result.nextBet}, Total loss: $${result.totalLoss}`); 
-                            newStake = result.nextBet;
-
-                        } else {
+                        if(lossAmount < 0){
                             // newStake = newStake * 3;
                             console.log(`Trade loss`); 
-                            console.log(`newStake - ${newStake}`); 
-                            console.log(`totalLossAmount - ${lossAmount}`); 
-                            let result = calculateNextBet(newStake, profitRate, lossAmount, 'loss');
+                            let result = calculateNextBet(stake, profitRate, lossAmount, 'loss');
                             console.log(`Next bet: $${result.nextBet}, Total loss: $${result.totalLoss}`);
+                            newStake = result.nextBet;
+                        } else {
+                            console.log(`Trade win`); 
+                            let result = calculateNextBet(stake, profitRate, lossAmount, 'win');
+                            console.log(`Next bet: $${result.nextBet}, Total loss: $${result.totalLoss}`); 
                             newStake = result.nextBet;
                         }
                     }
@@ -312,6 +312,8 @@ function startWebSocket() {
                     setTimeout(() => {webSocketConnectionStart();}, 2000);
                 }
             }
+
+            
         } else {
             if(tradeCountsPerRun == null){
                 setTimeout(() => {placeTrade('DIGITOVER', 1, newStake);}, 5000);
@@ -326,11 +328,18 @@ function startWebSocket() {
                     webSocketConnectionStop();
                     setTimeout(() => {webSocketConnectionStart();}, 5000);
                 }
-            }
         }
-
+        }
     };
 
+
+    function calculateWinPercentage(betAmount, profit) {
+        if (betAmount <= 0) {
+            throw new Error("Bet amount must be greater than zero.");
+        }
+        const winPercentage = (profit / betAmount) * 100;
+        return winPercentage;
+    }
 
     function calculateNextBet(currentBet, profitRate, previousLosses, outcome) {
         if (outcome === "win") {
@@ -342,8 +351,8 @@ function startWebSocket() {
             };
         } else if (outcome === "loss") {
             // If the bet is lost, add the current bet to the total losses
-            // const totalLoss = Math.abs(previousLosses) + currentBet;
-            const totalLoss = Math.abs(previousLosses);
+            const totalLoss = Math.abs(previousLosses) + currentBet;
+            // const totalLoss = Math.abs(previousLosses);
             // Calculate the next bet required to recover the total loss
             const nextBet = totalLoss / profitRate;
             return {
