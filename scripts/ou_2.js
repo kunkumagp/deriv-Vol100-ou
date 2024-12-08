@@ -36,7 +36,7 @@ function startWebSocket() {
     ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
     let responseCount = 0;
     let isTradeOpen = false;
-    let ldp = 2;
+    let ldp = 3;
     let lastTradeId = null;
     let primaryProposalObject = null;
     let secondaryProposalObject = null;
@@ -53,9 +53,10 @@ function startWebSocket() {
     let initAccBalance = 0;
     let martingale = true;
     let tradeCountsPerRun = null;
+    let tickDuration = 5;
+    let lostCountInRow = 0;
 
     let newStake = stake;
-    let profitRate = 0.4; // 40% profit rate
 
     ws.onopen = function () {
         // Authenticate
@@ -77,7 +78,7 @@ function startWebSocket() {
             totalResults.innerHTML = `Initial Account Balance : $${initAccBalance}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\n\nTotal Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\n\n-----------------------------\n\nLoss Amount: $${lossAmount}\nNew Profit : <span style="font-weight: 900;">$${newProfit}</span>  \n`;
 
 
-            placeTrade('DIGITOVER', 1, newStake);
+            placeTrade('DIGITOVER', tickDuration, newStake);
         }
 
         if (response.msg_type === 'proposal') {
@@ -85,20 +86,24 @@ function startWebSocket() {
 
             if(!isTradeOpen){
 
-                if(primaryProposalObject != null && secondaryProposalObject == null){
-                    secondaryProposalObject = response;
-                } else if(primaryProposalObject == null && secondaryProposalObject == null){
-                    primaryProposalObject = response;
-                    placeTrade('DIGITOVER', 2, newStake);
-                }
+                primaryProposalObject = response;
+                startTicks();
 
-                if(primaryProposalObject != null && secondaryProposalObject != null){
-                    // console.log('primaryProposalObject - ', primaryProposalObject);
-                    // console.log('secondaryProposalObject - ', secondaryProposalObject);
-                    // console.log('Ready to Trade');
+
+                // if(primaryProposalObject != null && secondaryProposalObject == null){
+                //     secondaryProposalObject = response;
+                // } else if(primaryProposalObject == null && secondaryProposalObject == null){
+                //     primaryProposalObject = response;
+                //     placeTrade('DIGITOVER', 2, newStake);
+                // }
+
+                // if(primaryProposalObject != null && secondaryProposalObject != null){
+                //     // console.log('primaryProposalObject - ', primaryProposalObject);
+                //     // console.log('secondaryProposalObject - ', secondaryProposalObject);
+                //     // console.log('Ready to Trade');
                     
-                    startTicks();
-                }
+                //     startTicks();
+                // }
             }
         }
 
@@ -119,18 +124,18 @@ function startWebSocket() {
 
             console.log(`Last Digit - `, currentlastDigit);
             
-            if(currentlastDigit == ldp){
-                console.log('Proposal Response:', secondaryProposalObject);
+            // if(currentlastDigit = ldp){
+            //     console.log('Proposal Response:', secondaryProposalObject);
 
-                buyRequest = {
-                    buy: secondaryProposalObject.proposal.id,
-                    price: secondaryProposalObject.proposal.ask_price,
-                };
-                ws.send(JSON.stringify(buyRequest));
-            }
+            //     buyRequest = {
+            //         buy: secondaryProposalObject.proposal.id,
+            //         price: secondaryProposalObject.proposal.ask_price,
+            //     };
+            //     ws.send(JSON.stringify(buyRequest));
+            // }
 
 
-            if(currentlastDigit < ldp){
+            if(currentlastDigit <= ldp){
                 console.log('Proposal Response:', primaryProposalObject);
 
                 buyRequest = {
@@ -170,10 +175,12 @@ function startWebSocket() {
 
                     if( profit > 0){
                         totalProfitAmount = totalProfitAmount + profit;
-                        winTradeCount = winTradeCount+1;    
+                        winTradeCount = winTradeCount+1;  
+                        lostCountInRow = 0;
                     } else {
                         totalLossAmount = totalLossAmount + profit;
                         lossTradeCount = lossTradeCount+1;
+                        lostCountInRow = lostCountInRow + 1;
                     }
                     lossAmount = lossAmount + profit
                     if(lossAmount > 0){lossAmount = 0;}
@@ -212,8 +219,14 @@ function startWebSocket() {
                     if( profit > 0){
                         scriptRunInLoop(true); 
                     } else {
-                        scriptRunInLoop(false); 
-                        // setTimeout(() => {fetchTradeDetails(lastTradeId);}, 2000); 
+                        setTimeout(() => {scriptRunInLoop(false); }, 60000); 
+
+                        // scriptRunInLoop(false); 
+                        // if(lossAmount >= 8 ){
+                        //     setTimeout(() => {scriptRunInLoop(false); }, 60000); 
+                        // } else {
+                        //     setTimeout(() => {scriptRunInLoop(false); }, 5000); 
+                        // }
                     }
                     
 
@@ -299,10 +312,10 @@ function startWebSocket() {
 
         if(isLastTradeWin){
             if(tradeCountsPerRun == null){
-                placeTrade('DIGITOVER', 1, newStake);
+                placeTrade('DIGITOVER', tickDuration, newStake);
             } else {
                 if(totalTradeCount < tradeCountsPerRun){
-                    placeTrade('DIGITOVER', 1, newStake);
+                    placeTrade('DIGITOVER', tickDuration, newStake);
                 } else if(totalTradeCount >= tradeCountsPerRun){
                     let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
                     text += `\n-----------------------------\n`;
@@ -314,10 +327,10 @@ function startWebSocket() {
             }
         } else {
             if(tradeCountsPerRun == null){
-                setTimeout(() => {placeTrade('DIGITOVER', 1, newStake);}, 5000);
+                setTimeout(() => {placeTrade('DIGITOVER', tickDuration, newStake);}, 5000);
             } else {
                 if(totalTradeCount < tradeCountsPerRun){
-                    setTimeout(() => {placeTrade('DIGITOVER', 1, newStake);}, 5000);
+                    setTimeout(() => {placeTrade('DIGITOVER', tickDuration, newStake);}, 5000);
                 } else if(totalTradeCount >= tradeCountsPerRun){
                     let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
                     text += `\n-----------------------------\n`;

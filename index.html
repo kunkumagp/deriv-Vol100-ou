@@ -17,27 +17,41 @@
             <select class="form-control" id="tradeOption">
                 <option value="rf_1">Rise & Fall</option>
                 <option value="ou_1">OVER UNDER</option>
-                <option value="ou_2"selected>OVER UNDER 2</option>
+                <option value="ou_2">OVER UNDER 2</option>
                 <option value="ou_3">OVER UNDER 3</option>
-                <option value="acmlt_1">Accumulator</option>
+                <option value="acmlt_1"selected>Accumulator</option>
                 <option value="md_1">Matches/Differs</option>
-            </select><br/>
-            <select class="form-control" id="marketOption">
-                <option value="R_10">Volitility Index 10</option>
-                <option value="R_25"selected>Volitility Index 25</option>
-                <option value="R_50">Volitility Index 50</option>
-                <option value="R_75">Volitility Index 75</option>
-                <option value="R_100">Volitility Index 100</option>
-            </select><br/>
+            </select>
+            <div class="row sub">
+                <br/>
+                <select class="form-control" id="marketOption">
+                    <option value="R_10">Volitility Index 10</option>
+                    <option value="R_25"selected>Volitility Index 25</option>
+                    <option value="R_50">Volitility Index 50</option>
+                    <option value="R_75">Volitility Index 75</option>
+                    <option value="R_100">Volitility Index 100</option>
+                </select>
+                <br/>
+            </div>
+            <div class="row sub">
+                <div class="col-md-6">
+                    Stake (USD): <input class="form-control" id="stake" placeholder="1 USD" value="1"/>
+                </div>
+                <div class="col-md-6">
+                    Profit Rate (%): <input class="form-control" id="rate" placeholder="40" value="63"/>
+                </div>
+            </div>
+            
+            
+            <br/>
             <button class="btn btn-default" id="startWebSocket">Start WebSocket</button>
         </div>
         <br/>
         <div class="row">
             <div class="col-md-6">
-                <pre id="totalResults" style="text-align: left;">Initial Account Balance : $0 <br/>Profit: $0 <br/>Loss: $0 <br/><br/>-----------------------------<br/><br/>Total Trade Count: 0 <br/>Win Count: 0 <br/>Loss Count: 0 <br/><br/>-----------------------------<br/><br/>Loss Amount: $0 <br/>New Profit : $0  <br/></pre> <!-- For displaying the WebSocket data -->
-                <pre id="results" style="text-align: left; max-height: 500px;"></pre> <!-- For displaying the WebSocket data -->
+                <pre  style="text-align: left;">Initial Account Balance : <span id="initialAccBalance">$0</span><br/><br/>-----------------------------<br/><br/>Total Trade Count: <span id="totalTradeCount">0</span> <br/>Win Count: <span id="winCount">0</span> <br/>Loss Count: <span id="lossCount">0</span> <br/><br/>-----------------------------<br/><br/>Total Profit: <span id="totalProfit">$0</span> <br/>Total Loss: <span id="totalLoss">$0</span> <br/><br/>-----------------------------<br/><br/>Current Loss Amount: <span id="currentLossAmount">$0</span> <br/>Current Profit : <span id="currentProfitAmount">$0</span>  <br/></pre>
             </div>
-            <div class="col-md-6"><pre id="output" style="text-align: left; max-height: 700px;"></pre> <!-- For displaying the WebSocket data --></div>
+            <div class="col-md-6"><pre id="output" style="text-align: left; max-height: 700px;"></pre></div>
         </div>
         
         

@@ -2,8 +2,9 @@ let isRunning = false; // Flag to track the script state
 let ws; // Declare WebSocket outside to manage it globally
 let intervalId; // To store the interval ID
 let stake = 1; // Trade stake amount
+let profitRate = 0.4; // Trade stake amount
 let intervalTime = 3000; // Interval for requesting ticks history
-let tradeCountsPerRun = 10; // Number of history data points to fetch
+let tradeCountsPerRun = null; // Number of history data points to fetch
 let market = 'R_10'; // Volatility 10 Index 1s
 
 const button = document.getElementById('startWebSocket');
@@ -13,12 +14,26 @@ const totalResults = document.getElementById('totalResults'); // For displaying 
 const results = document.getElementById('results'); // For displaying WebSocket messages
 const historyDataCount = 25; // Number of history data points to fetch
 
+
+document.addEventListener("DOMContentLoaded", function(){
+    if(document.getElementById("tradeOption").value == 'acmlt_1'){
+        $(".sub").each(function() {
+            $(this).addClass("hide");
+        });
+    }
+
+    output.scrollTop = output.scrollHeight;
+});
+
+
 button.addEventListener('click', toggleWebSocket);
 
 function toggleWebSocket() {
     // Get the selected option value
     var selectedOption = document.getElementById("tradeOption").value;
     var marketOption = document.getElementById("marketOption").value;
+    stake = document.getElementById("stake").value;
+    profitRate = (document.getElementById("rate").value / 100 );
 
     // Load the corresponding script based on the selected option
     loadScript(selectedOption, marketOption);
