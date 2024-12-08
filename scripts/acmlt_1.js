@@ -315,7 +315,7 @@ function startWebSocket() {
                 currency: 'USD', // Currency for trading
                 duration_unit: 't', // Tick duration
                 symbol: selectedMarket, // Underlying market
-                growth_rate: 0.05, // Choose one from growth_rate_range
+                growth_rate: 0.04, // Choose one from growth_rate_range
             },
         }
         ;
