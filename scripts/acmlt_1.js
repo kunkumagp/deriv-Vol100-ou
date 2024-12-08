@@ -148,6 +148,7 @@ function startWebSocket() {
                     } else {
                         selectedMarket = getRandomMarket(marketArray, selectedMarket);
                         winCountPerRow = 0;
+                        console.clear();
                         setTimeout(() => {
                             scriptRunInLoop(true);
                         }, 60000);
