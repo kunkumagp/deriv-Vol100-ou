@@ -141,7 +141,7 @@ function startWebSocket() {
                             winCountPerRow = 0;
                             setTimeout(() => {
                                 scriptRunInLoop(true);
-                            }, 60000);
+                            }, 2000);
                         } else {
                             scriptRunInLoop(true);
                         }
@@ -151,7 +151,7 @@ function startWebSocket() {
                         console.clear();
                         setTimeout(() => {
                             scriptRunInLoop(true);
-                        }, 60000);
+                        }, 2000);
                     }
 
                     // if(newProfit >= (initialAccBalance * 0.2)){
@@ -315,7 +315,7 @@ function startWebSocket() {
                 currency: 'USD', // Currency for trading
                 duration_unit: 't', // Tick duration
                 symbol: selectedMarket, // Underlying market
-                growth_rate: 0.04, // Choose one from growth_rate_range
+                growth_rate: 0.03, // Choose one from growth_rate_range
             },
         }
         ;
