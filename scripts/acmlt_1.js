@@ -49,6 +49,7 @@ function startWebSocket() {
     let newProfit = 0 ;
     let lossAmount = 0;
     let winCountPerRow = 0;
+    let initialAccBalance = 0;
 
     ws.onopen = function () {
         // Authenticate
@@ -61,7 +62,8 @@ function startWebSocket() {
 
         if (response.msg_type === 'authorize') {
             console.log('Authorization successful.');
-            document.getElementById('initialAccBalance').innerHTML = response.authorize.balance;
+            initialAccBalance = response.authorize.balance;
+            document.getElementById('initialAccBalance').innerHTML = initialAccBalance;
             makeTrades();
 
         }
@@ -99,7 +101,7 @@ function startWebSocket() {
                 console.log(`Current profit: ${profit}`);
 
 
-                if (profit >= 1) {
+                if (profit >= (newStake * 0.05)) {
                     console.log(`Take Profit reached: ${profit}`);
                     closeContract(contract.contract_id);
                 }
@@ -129,22 +131,51 @@ function startWebSocket() {
                     reportUpdate(totalTradeCount, winTradeCount, lossTradeCount, totalProfitAmount, totalLossAmount, lossAmount, newProfit);
                     // console.log('winCountPerRow - ',winCountPerRow);
 
-                    if(profit < 0){
-                        setTimeout(() => {
-                            selectedMarket = getRandomMarket(marketArray, selectedMarket);
-                            scriptRunInLoop(true);
 
-                        }, 10000);
-                        
-                    } else {
+
+
+
+                    if(winCountPerRow < 10){
                         scriptRunInLoop(true);
+                    } else {
+                        selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                        winCountPerRow = 0;
+                        setTimeout(() => {
+                            scriptRunInLoop(true);
+                        }, 60000);
                     }
+
+                    // if(newProfit >= (initialAccBalance * 0.2)){
+                    //     setTimeout(() => {
+                    //         scriptRunInLoop(true);
+                    //     }, 10000);
+                    // } else {
+                    //     scriptRunInLoop(true);
+                    // }
+
+                    // if(profit < 0){
+                    //     setTimeout(() => {
+                    //         selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                    //         scriptRunInLoop(true);
+                    //     }, 2000);
+                        
+                    // } else {
+                    //     if(winCountPerRow < 10){
+                    //         scriptRunInLoop(true);
+                    //     } else {
+                    //         setTimeout(() => {
+                    //             selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                    //             winCountPerRow = 0;
+                    //             scriptRunInLoop(true);
+                    //         }, 2000);
+                    //     }
+                    // }
                     output.scrollTop = output.scrollHeight;
                     
                 } else {
                     setTimeout(() => {
                         fetchTradeDetails(lastTradeId);
-                    }, 3000);
+                    }, 1000);
                 }
             }
             
@@ -240,8 +271,8 @@ function startWebSocket() {
 
     const makeTrades = () => {
         const tradeType = 'ACCU'; // Or 'MULTDOWN' for downward trades
-        const leverage = 50; // Example leverage
-        placeTrade(tradeType, newStake, leverage);
+        newStake = 10;
+        placeTrade(tradeType, newStake);
     };
 
 
@@ -264,18 +295,18 @@ function startWebSocket() {
     };
     
     // Place a trade (called after signal analysis)
-    const placeTrade = (tradeType, tradeStake, leverage) => {
+    const placeTrade = (tradeType, tradeStake) => {
         const tradeRequest = {
             buy: 1,
-            price: 10, // Stake amount
+            price: tradeStake, // Stake amount
             parameters: {
-                amount: 10, // Stake amount
+                amount: tradeStake, // Stake amount
                 basis: 'stake', // Define stake basis
-                contract_type: 'ACCU', // Accumulator contract type
+                contract_type: tradeType, // Accumulator contract type
                 currency: 'USD', // Currency for trading
                 duration_unit: 't', // Tick duration
                 symbol: selectedMarket, // Underlying market
-                growth_rate: 0.01, // Choose one from growth_rate_range
+                growth_rate: 0.05, // Choose one from growth_rate_range
             },
         }
         ;

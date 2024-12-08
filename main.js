@@ -6,6 +6,7 @@ let profitRate = 0.4; // Trade stake amount
 let intervalTime = 3000; // Interval for requesting ticks history
 let tradeCountsPerRun = null; // Number of history data points to fetch
 let market = 'R_10'; // Volatility 10 Index 1s
+let lastTradeId = null;
 
 const button = document.getElementById('startWebSocket');
 const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
@@ -13,6 +14,23 @@ const output = document.getElementById('output'); // For displaying WebSocket me
 const totalResults = document.getElementById('totalResults'); // For displaying WebSocket messages
 const results = document.getElementById('results'); // For displaying WebSocket messages
 const historyDataCount = 25; // Number of history data points to fetch
+
+
+
+ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
+let newStake = stake;
+const marketArray = ['R_10', 'R_25', 'R_50', 'R_75', 'R_100'];
+let selectedMarket = market;
+
+let totalProfitAmount = 0;
+let totalLossAmount = 0;
+let totalTradeCount = 0;
+let winTradeCount = 0;
+let lossTradeCount = 0;
+let newProfit = 0 ;
+let lossAmount = 0;
+let winCountPerRow = 0;
+let initialAccBalance = 0;
 
 
 document.addEventListener("DOMContentLoaded", function(){
