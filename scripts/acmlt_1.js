@@ -101,7 +101,7 @@ function startWebSocket() {
                 console.log(`Current profit: ${profit}`);
 
 
-                if (profit >= (newStake * 0.05)) {
+                if (profit >= (newStake * 0.1)) {
                     console.log(`Take Profit reached: ${profit}`);
                     closeContract(contract.contract_id);
                 }
