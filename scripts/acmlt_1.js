@@ -136,7 +136,15 @@ function startWebSocket() {
 
 
                     if(winCountPerRow < 10){
-                        scriptRunInLoop(true);
+                        if(profit < 0){
+                            selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                            winCountPerRow = 0;
+                            setTimeout(() => {
+                                scriptRunInLoop(true);
+                            }, 60000);
+                        } else {
+                            scriptRunInLoop(true);
+                        }
                     } else {
                         selectedMarket = getRandomMarket(marketArray, selectedMarket);
                         winCountPerRow = 0;
