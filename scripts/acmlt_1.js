@@ -34,7 +34,6 @@ runAccumulatorScript();
 function startWebSocket() {
 
     const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
-    const market = 'R_100'; // Volatility 10 Index 1s
     const output = document.getElementById('output'); // For displaying WebSocket messages
     ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
     let newStake = stake;
