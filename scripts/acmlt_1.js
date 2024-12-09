@@ -140,7 +140,7 @@ function startWebSocket() {
                             winCountPerRow = 0;
                             setTimeout(() => {
                                 scriptRunInLoop(true);
-                            }, 2000);
+                            }, 30000);
                         } else {
                             scriptRunInLoop(true);
                         }
@@ -150,7 +150,7 @@ function startWebSocket() {
                         console.clear();
                         setTimeout(() => {
                             scriptRunInLoop(true);
-                        }, 2000);
+                        }, 30000);
                     }
 
                     // if(newProfit >= (initialAccBalance * 0.2)){
