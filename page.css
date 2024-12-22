@@ -12,6 +12,18 @@ button.btn-default,
     color: #FFF;
 }
 
+.info{
+    background-color: rgb(52, 52, 52);
+    border: none;
+    color: #FFF;
+    text-align: left;
+    padding: 20px;
+}
+
+.info div{
+    margin: 010px 0;
+}
+
 button.btn-default:hover,
 button.btn-default:active,
 button.btn-default:focus
@@ -19,4 +31,9 @@ button.btn-default:focus
     background-color: rgb(41, 36, 36);
     border: none !important;
     color: #FFF;
+}
+
+#countdown{
+    font-size: 24px;
+    font-weight: 900;;
 }

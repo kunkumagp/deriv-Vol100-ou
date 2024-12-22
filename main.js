@@ -1,11 +1,9 @@
 let isRunning = false; // Flag to track the script state
 let ws; // Declare WebSocket outside to manage it globally
 let intervalId; // To store the interval ID
-let stake = 1; // Trade stake amount
 let profitRate = 0.4; // Trade stake amount
 let intervalTime = 3000; // Interval for requesting ticks history
 let tradeCountsPerRun = null; // Number of history data points to fetch
-let market = 'R_10'; // Volatility 10 Index 1s
 let lastTradeId = null;
 
 const button = document.getElementById('startWebSocket');
@@ -13,14 +11,16 @@ const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
 const output = document.getElementById('output'); // For displaying WebSocket messages
 const totalResults = document.getElementById('totalResults'); // For displaying WebSocket messages
 const results = document.getElementById('results'); // For displaying WebSocket messages
+const percentage = document.getElementById('percentage'); // For displaying WebSocket messages
+const marketOption = document.getElementById("marketOption");
 const historyDataCount = 25; // Number of history data points to fetch
+const ldpOpion = document.getElementById("ldp");
+const stakeOpion = document.getElementById("stake");
 
 
 
 ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
-let newStake = stake;
 const marketArray = ['R_10', 'R_25', 'R_50', 'R_75', 'R_100'];
-let selectedMarket = market;
 
 let totalProfitAmount = 0;
 let totalLossAmount = 0;
@@ -30,8 +30,16 @@ let lossTradeCount = 0;
 let newProfit = 0 ;
 let lossAmount = 0;
 let winCountPerRow = 0;
+let winCountPerRowLimit = 5;
 let initialAccBalance = 0;
+let percentageValue = percentage.value;
+let selectedMarket = marketOption.value;
+let ldp = ldpOpion.value;
+let profitLimit = 0.1;
+let lastTradeStatus = null;
 
+// let interval = (60000 * 0.5);
+let interval = (20000);
 
 document.addEventListener("DOMContentLoaded", function(){
     if(document.getElementById("tradeOption").value == 'acmlt_1'){
@@ -49,30 +57,30 @@ button.addEventListener('click', toggleWebSocket);
 function toggleWebSocket() {
     // Get the selected option value
     var selectedOption = document.getElementById("tradeOption").value;
-    var marketOption = document.getElementById("marketOption").value;
-    stake = document.getElementById("stake").value;
-    profitRate = (document.getElementById("rate").value / 100 );
+    stake = stakeOpion.value;
+    // profitRate = (document.getElementById("rate").value / 100 );
 
     // Load the corresponding script based on the selected option
-    loadScript(selectedOption, marketOption);
+    loadScript(selectedOption);
 }
 
-function loadScript(option, marketOption) {
+function loadScript(option) {
     var script = document.createElement("script");
     script.type = "text/javascript";
 
-    market = marketOption;
 
     if (option === "rf_1") {
         script.src = "./scripts/rf_1_2.js";  // Path to your Rise & Fall script
     } else if (option === "ou_1") {
         script.src = "./scripts/ou_1.js";  // Path to your Accumulator script
     } else if (option === "ou_2") {
-        script.src = "./scripts/ou_2.js";  // Path to your Accumulator script
+        // script.src = "./scripts/ou_2.js";  // Path to your Accumulator script
+        script.src = "./new_scripts/overunder.js";  // Path to your Accumulator script
     } else if (option === "ou_3") {
         script.src = "./scripts/ou_3.js";  // Path to your Accumulator script
     } else if (option === "acmlt_1") {
         script.src = "./scripts/acmlt_1.js";  // Path to your Accumulator script
+        // script.src = "./scripts/acmlt_2.js";  // Path to your Accumulator script
     } else if (option === "md_1") {
         script.src = "./scripts/md_1.js";  // Path to your Accumulator script
     }

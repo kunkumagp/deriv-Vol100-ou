@@ -29,9 +29,9 @@ function webSocketConnectionStop(){
     button.innerHTML = "Start WebSocket";
 };
 
-// percentage.addEventListener('change', ()=>{
-//     percentageValue = percentage.value;
-// });
+percentage.addEventListener('change', ()=>{
+    percentageValue = percentage.value;
+});
 
 marketOption.addEventListener('change', ()=>{
     selectedMarket = marketOption.value;
@@ -47,6 +47,7 @@ function startWebSocket() {
     const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
     const output = document.getElementById('output'); // For displaying WebSocket messages
     ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
+    let newStake = stake;
 
     let totalProfitAmount = 0;
     let totalLossAmount = 0;
@@ -57,6 +58,7 @@ function startWebSocket() {
     let lossAmount = 0;
     let winCountPerRow = 0;
     let initialAccBalance = 0;
+    let newTime = 500;
     const tradeType = 'ACCU'; // Or 'MULTDOWN' for downward trades
     
 
@@ -96,7 +98,7 @@ function startWebSocket() {
             totalTradeCount = totalTradeCount + 1
             setTimeout(() => {
                 fetchTradeDetails(lastTradeId);
-            }, 3000);
+            }, newTime);
         }
 
         // console.log(response);
@@ -109,11 +111,16 @@ function startWebSocket() {
                 const profit = parseFloat(response.proposal_open_contract.profit);
                 console.log(`Current profit: ${profit}`);
 
-
-                if (profit >= (stake * profitLimit)) {
+                if(profit > 0){
                     console.log(`Take Profit reached: ${profit}`);
                     closeContract(contract.contract_id);
                 }
+
+
+                // if (profit >= (newStake * profitLimit)) {
+                //     console.log(`Take Profit reached: ${profit}`);
+                //     closeContract(contract.contract_id);
+                // }
 
 
                 if (contract.is_sold) {
@@ -138,45 +145,115 @@ function startWebSocket() {
 
                     newProfit = totalProfitAmount + totalLossAmount;
                     const spanColor = newProfit > 0 ? 'green' : 'red';
-                    reportUpdate(totalTradeCount, winTradeCount, lossTradeCount, totalProfitAmount, totalLossAmount, lossAmount, newProfit, initialAccBalance);
+                    // totalResults.innerHTML = `Total Trade Count: ${totalTradeCount}\nWin Count: ${winTradeCount}\nLoss Count: ${lossTradeCount}\nProfit: $${totalProfitAmount}\nLoss: $${totalLossAmount}\n\n-----------------------------\nLoss Amount: $${lossAmount}\nNew Profit : <span style="color: ${spanColor}; font-weight: 900;">$${newProfit}</span>  \n`;
+                    reportUpdate(totalTradeCount, winTradeCount, lossTradeCount, totalProfitAmount, totalLossAmount, lossAmount, newProfit);
+                    // console.log('winCountPerRow - ',winCountPerRow);
 
                     if(lossAmount < 0){
-                        setTimer(interval);
+                        setTimer(newTime);
                         setTimeout(() => {
                             profitLimit = 0.2;
-                            placeRapidTrade(tradeType, stake, selectedMarket);
-                            makeTrades(); 
-                        }, interval);
+                            // selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                            placeRapidTrade(tradeType, newStake, selectedMarket);
+                        }, newTime);
                     } else {
                         profitLimit = 0.1;
-                        setTimer(interval);
+                        setTimer(newTime);
+                        // webSocketConnectionStop();
                         setTimeout(() => {
-                            makeTrades(); 
-                        }, (interval));
+                            // webSocketConnectionStart();
+                            makeTrades();
+                        }, (newTime));
+                        
+
                     }
 
-                    // profitLimit = 0.1;
-                    // stake = 10;
-                    // setTimer(interval);
-                    // setTimeout(() => {
-                    //     makeTrades(); 
-                    // }, (interval));
-
-                    if(winTradeCount >= 10 && lossAmount == 0){
-                        console.log(1111);
-                        
+                    if(winTradeCount >= 20 && lossAmount == 0){
                         webSocketConnectionStop();
                         setTimeout(() => {
                             webSocketConnectionStart();
-                        }, (60000 * 5));
+                        }, (60000));
                     }
 
+                    // if(winTradeCount >= 10 && lossAmount == 0){
+                    //     webSocketConnectionStop();
+                    //     setTimeout(() => {
+                    //         webSocketConnectionStart();
+                    //     }, (60000 * 5));
+                    // }
+
+                    // if(profit < 0){
+                    //     if(lossAmount < 0){
+                    //         profitLimit = 0.01;
+                    //         placeRapidTrade(tradeType, newStake);
+                    //     }
+                    //     // makeTrades();
+                    // } else {
+                    //     setTimer();
+                    //     setTimeout(() => {
+                    //         // scriptRunInLoop(true);
+                    //         // restartBot();
+                    //         makeTrades();
+                    //     }, interval);
+                    // }
+
+
+
+                    // if(winCountPerRow < winCountPerRowLimit){
+                    //     if(profit < 0){
+                    //         winCountPerRow = 0;
+                    //         setTimer();
+                    //         setTimeout(() => {
+                    //             scriptRunInLoop(true);
+                    //         }, interval);
+                    //     } else {
+                    //         scriptRunInLoop(true);
+                    //     }
+                    //     // if(profit < 0){
+                    //     //     selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                    //     //     winCountPerRow = 0;
+                    //     //     setTimeout(() => {
+                    //     //         scriptRunInLoop(true);
+                    //     //     }, interval);
+                    //     // } else {
+                    //     //     scriptRunInLoop(true);
+                    //     // }
+                    //     // scriptRunInLoop(true);
+                    // } else {
+                    //     restartBot();
+                    // }
+
+                    // if(newProfit >= (initialAccBalance * 0.2)){
+                    //     setTimeout(() => {
+                    //         scriptRunInLoop(true);
+                    //     }, 10000);
+                    // } else {
+                    //     scriptRunInLoop(true);
+                    // }
+
+                    // if(profit < 0){
+                    //     setTimeout(() => {
+                    //         selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                    //         scriptRunInLoop(true);
+                    //     }, 2000);
+                        
+                    // } else {
+                    //     if(winCountPerRow < 10){
+                    //         scriptRunInLoop(true);
+                    //     } else {
+                    //         setTimeout(() => {
+                    //             selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                    //             winCountPerRow = 0;
+                    //             scriptRunInLoop(true);
+                    //         }, 2000);
+                    //     }
+                    // }
                     output.scrollTop = output.scrollHeight;
                     
                 } else {
                     setTimeout(() => {
                         fetchTradeDetails(lastTradeId);
-                    }, 1000);
+                    }, 500);
                 }
             }
             
@@ -221,14 +298,13 @@ function startWebSocket() {
         ws.send(JSON.stringify(sellRequest));
     };
 
-    const reportUpdate = (totalTradeCount, winCount, lossCount, totalProfit, totalLoss, currentLossAmount, currentProfitAmount, initialAccBalance) => {
+    const reportUpdate = (totalTradeCount, winCount, lossCount, totalProfit, totalLoss, currentLossAmount, currentProfitAmount) => {
         // const totalResults = document.getElementById('totalResults'); // For displaying WebSocket messages
 
         // document.getElementById('initialAccBalance').innerHTML = response.authorize.balance;
         document.getElementById('totalTradeCount').innerHTML = totalTradeCount;
         document.getElementById('winCount').innerHTML = winCount;
         document.getElementById('lossCount').innerHTML = lossCount;
-        let newAccBalance = initialAccBalance + currentProfitAmount;
 
 
         if(totalProfit < 0){
@@ -238,16 +314,6 @@ function startWebSocket() {
         } else {
             document.getElementById('totalProfit').innerHTML = `<span style="color: green; font-weight: 900;">$${totalProfit}</span>`;
         }
-
-
-        if(newAccBalance < initialAccBalance){
-            document.getElementById('newAccBalance').innerHTML = `<span style="color: red; font-weight: 900;">$${newAccBalance}</span>`;
-        } else if(newAccBalance == initialAccBalance){
-            document.getElementById('newAccBalance').innerHTML = `<span>$${newAccBalance}</span>`;
-        } else {
-            document.getElementById('newAccBalance').innerHTML = `<span style="color: green; font-weight: 900;">$${newAccBalance}</span>`;
-        }
-
 
         if(totalLoss < 0){
             document.getElementById('totalLoss').innerHTML = `<span style="color: red; font-weight: 900;">$${totalLoss}</span>`;
@@ -298,7 +364,8 @@ function startWebSocket() {
     };
 
     const makeTrades = () => {
-        placeTrade(tradeType, stake);
+        newStake = 10;
+        placeTrade(tradeType, newStake);
     };
 
 
@@ -322,7 +389,7 @@ function startWebSocket() {
     
     // Place a trade (called after signal analysis)
     const placeTrade = (tradeType, tradeStake) => {
-        // selectedMarket = getRandomMarket(marketArray, selectedMarket);
+        selectedMarket = getRandomMarket(marketArray, selectedMarket);
         const tradeRequest = {
             buy: 1,
             price: tradeStake, // Stake amount

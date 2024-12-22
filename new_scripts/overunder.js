@@ -29,22 +29,26 @@ function webSocketConnectionStop(){
     button.innerHTML = "Start WebSocket";
 };
 
-// percentage.addEventListener('change', ()=>{
-//     percentageValue = percentage.value;
-// });
-
 marketOption.addEventListener('change', ()=>{
     selectedMarket = marketOption.value;
+});
+
+ldpOpion.addEventListener('change', ()=>{
+    ldp = ldpOpion.value;
+});
+
+stakeOpion.addEventListener('change', ()=>{
+    stake = stakeOpion.value;
 });
 
 
 runAccumulatorScript();
 
 
-
 function startWebSocket() {
-
+    // const apiToken = 'lkUxtOopvUhCpIX'; // Replace with your actual API token
     const apiToken = 'yubZ4jcrU2ffmgl'; // Replace with your actual API token
+
     const output = document.getElementById('output'); // For displaying WebSocket messages
     ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089'); // Replace with your own app_id if needed
 
@@ -57,14 +61,29 @@ function startWebSocket() {
     let lossAmount = 0;
     let winCountPerRow = 0;
     let initialAccBalance = 0;
+    const market = 'R_100';
     const tradeType = 'ACCU'; // Or 'MULTDOWN' for downward trades
-    
+    selectedMarket = market;
+    interval = 1000;
+
 
     ws.onopen = function () {
         // Authenticate
         getAuthentication();
         output.innerHTML += 'WebSocket connection opened.\n-------------------------------------\n';
     };
+
+    ws.onclose = function () {
+        console.log('Connection closed');
+        output.innerHTML += 'Connection closed\n-----------------------------\n\n';
+        console.log('-----------------------------\n');
+    };
+
+    ws.onerror = function (err) {
+        console.error('WebSocket error:', err);
+        output.innerHTML += `WebSocket error: ${err.message}\n`;
+    };
+
 
     ws.onmessage = function (event) { 
         const response = JSON.parse(event.data);
@@ -74,7 +93,6 @@ function startWebSocket() {
             initialAccBalance = response.authorize.balance;
             document.getElementById('initialAccBalance').innerHTML = initialAccBalance;
             makeTrades();
-
         }
 
 
@@ -99,8 +117,6 @@ function startWebSocket() {
             }, 3000);
         }
 
-        // console.log(response);
-        
 
         if(response.msg_type === 'proposal_open_contract'){
             if(response.proposal_open_contract.contract_id === lastTradeId){
@@ -108,13 +124,6 @@ function startWebSocket() {
 
                 const profit = parseFloat(response.proposal_open_contract.profit);
                 console.log(`Current profit: ${profit}`);
-
-
-                if (profit >= (stake * profitLimit)) {
-                    console.log(`Take Profit reached: ${profit}`);
-                    closeContract(contract.contract_id);
-                }
-
 
                 if (contract.is_sold) {
                     const profit = contract.profit;
@@ -139,86 +148,84 @@ function startWebSocket() {
                     newProfit = totalProfitAmount + totalLossAmount;
                     const spanColor = newProfit > 0 ? 'green' : 'red';
                     reportUpdate(totalTradeCount, winTradeCount, lossTradeCount, totalProfitAmount, totalLossAmount, lossAmount, newProfit, initialAccBalance);
+                    
+                    // if(profit < 0){
+                    //     interval = 1000;
+                    // } else {
+                    //     interval = 500;
+                    // }
 
-                    if(lossAmount < 0){
-                        setTimer(interval);
-                        setTimeout(() => {
-                            profitLimit = 0.2;
-                            placeRapidTrade(tradeType, stake, selectedMarket);
-                            makeTrades(); 
-                        }, interval);
-                    } else {
-                        profitLimit = 0.1;
-                        setTimer(interval);
-                        setTimeout(() => {
-                            makeTrades(); 
-                        }, (interval));
-                    }
+                    // if(lossAmount < 0){
+                    //     // selectedMarket = getRandomMarket(marketArray, selectedMarket);
+                    // }
 
-                    // profitLimit = 0.1;
-                    // stake = 10;
+                    // if(lossAmount < 0){
+                    //     // selectedMarket = getRandomMarket(marketArray, selectedMarket);
+
+                    //     setTimer(interval * 2);
+                    //     setTimeout(() => {
+                    //         makeTrades(); 
+                    //     }, (interval * 2));
+                    // } else {
+                    //     setTimer(interval);
+                    //     setTimeout(() => {
+                    //         makeTrades(); 
+                    //     }, (interval));
+    
+                    // }
+
                     // setTimer(interval);
                     // setTimeout(() => {
-                    //     makeTrades(); 
+                        makeTrades(); 
                     // }, (interval));
 
-                    if(winTradeCount >= 10 && lossAmount == 0){
-                        console.log(1111);
-                        
-                        webSocketConnectionStop();
-                        setTimeout(() => {
-                            webSocketConnectionStart();
-                        }, (60000 * 5));
-                    }
-
                     output.scrollTop = output.scrollHeight;
-                    
+
+                   
                 } else {
                     setTimeout(() => {
                         fetchTradeDetails(lastTradeId);
                     }, 1000);
                 }
             }
-            
         }
+
+
+    };
+
+
+
+    const makeTrades = () => {
+        placeTrade('DIGITOVER', 1, stake);
+    };
+
+    const getRandomMarket = (array, current) => {
+        let randomIndex;
+        let randomMarket;
     
+        do {
+            randomIndex = Math.floor(Math.random() * array.length);
+            randomMarket = array[randomIndex];
+        } while (randomMarket === current);
+    
+        return randomMarket;
     };
 
-
-   
-
-    ws.onclose = function () {
-        console.log('Connection closed');
-        output.innerHTML += 'Connection closed\n-----------------------------\n\n';
-        console.log('-----------------------------\n');
-    };
-
-    ws.onerror = function (err) {
-        console.error('WebSocket error:', err);
-        output.innerHTML += `WebSocket error: ${err.message}\n`;
-    };
-
-    const restartBot = () => {
-        if(lastTradeStatus == 'loss'){
-            selectedMarket = getRandomMarket(marketArray, selectedMarket);
-        }
-        winCountPerRow = 0;
-        console.clear();
-        // setTimer();
-        webSocketConnectionStop();
-        // setTimeout(() => {
-            webSocketConnectionStart();
-        // }, interval);
-    };
-
-    const closeContract = (contractId) => {
-        const sellRequest = {
-            sell: contractId,
-            price: 0, // Accept any price (market sell)
+    const placeTrade = (tradeType, duration, newStake) => {
+        const tradeRequest = {
+            proposal: 1,
+            amount: newStake, // $1 stake
+            basis: 'stake',
+            contract_type: tradeType, // 'DIGITOVER' or 'DIGITUNDER'
+            currency: 'USD',
+            duration: duration, // 1 tick
+            duration_unit: 't',
+            symbol: selectedMarket, // Market: Volatility 100 Index
+            barrier: ldp, // Predict last digit is 1
         };
-    
-        console.log('Closing contract:', sellRequest);
-        ws.send(JSON.stringify(sellRequest));
+
+        // console.log('Sending trade request:', tradeRequest);
+        ws.send(JSON.stringify(tradeRequest));
     };
 
     const reportUpdate = (totalTradeCount, winCount, lossCount, totalProfit, totalLoss, currentLossAmount, currentProfitAmount, initialAccBalance) => {
@@ -276,95 +283,12 @@ function startWebSocket() {
 
     };
 
-    const scriptRunInLoop = (isLastTradeWin) =>{
-
-        makeTrades(); 
-
-        // if(totalTradeCount < tradeCountsPerRun){
-        //     makeTrades(); 
-        // } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == false){
-        //     makeTrades();
-        // } else if(totalTradeCount >= tradeCountsPerRun && isLastTradeWin == true){
-        //     let text = totalResults.innerHTML.replaceAll(/\n\n-----------------------------/g,"");
-        //     text += `\n-----------------------------\n`;
-        //     results.innerHTML += text;
-
-        //     webSocketConnectionStop();
-        //     setTimeout(() => {
-        //         webSocketConnectionStart();
-        //     }, 2000);
-        // }
-
-    };
-
-    const makeTrades = () => {
-        placeTrade(tradeType, stake);
-    };
-
-
     const getAuthentication = () => {
         ws.send(JSON.stringify({
             authorize: apiToken
         }));
     }
 
-    const getRandomMarket = (array, current) => {
-        let randomIndex;
-        let randomMarket;
-    
-        do {
-            randomIndex = Math.floor(Math.random() * array.length);
-            randomMarket = array[randomIndex];
-        } while (randomMarket === current);
-    
-        return randomMarket;
-    };
-    
-    // Place a trade (called after signal analysis)
-    const placeTrade = (tradeType, tradeStake) => {
-        // selectedMarket = getRandomMarket(marketArray, selectedMarket);
-        const tradeRequest = {
-            buy: 1,
-            price: tradeStake, // Stake amount
-            parameters: {
-                amount: tradeStake, // Stake amount
-                basis: 'stake', // Define stake basis
-                contract_type: tradeType, // Accumulator contract type
-                currency: 'USD', // Currency for trading
-                duration_unit: 't', // Tick duration
-                symbol: selectedMarket, // Underlying market
-                growth_rate: percentageValue, // Choose one from growth_rate_range
-            },
-        }
-        ;
-    
-        console.log('Sending trade request for Accumulator:', tradeRequest);
-        ws.send(JSON.stringify(tradeRequest));
-    };
-
-     // Place rapid trade (called after signal analysis)
-     const placeRapidTrade = (tradeType, tradeStake, selectedMarket) => {
-        // selectedMarket = getRandomMarket(marketArray, selectedMarket);
-        const tradeRequest = {
-            buy: 1,
-            price: tradeStake, // Stake amount
-            parameters: {
-                amount: tradeStake, // Stake amount
-                basis: 'stake', // Define stake basis
-                contract_type: tradeType, // Accumulator contract type
-                currency: 'USD', // Currency for trading
-                duration_unit: 't', // Tick duration
-                symbol: selectedMarket, // Underlying market
-                growth_rate: 0.05, // Choose one from growth_rate_range
-            },
-        }
-        ;
-    
-        console.log('Sending trade request for Accumulator:', tradeRequest);
-        ws.send(JSON.stringify(tradeRequest));
-    };
-
-    // Function to fetch trade details by Contract ID
     const fetchTradeDetails = (contractId) => {
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             console.error("WebSocket is not open.");
@@ -380,7 +304,7 @@ function startWebSocket() {
         ws.send(JSON.stringify(contractDetailsRequest));
     }
 
-}
+};
 
 function setTimer (time){
     var timeleft = (time / 1000);
@@ -397,25 +321,4 @@ function setTimer (time){
         }
         timeleft -= 1;
       }, 1000);
-}
-
-
-
-
-// Calculate last digit percentages
-function calculateLastDigitPercentages(numbers) {
-    const totalNumbers = numbers.length;
-    const digitCounts = Array(10).fill(0);
-
-    const maxDecimals = Math.max(...numbers.map(num => (num.toString().split('.')[1] || '').length));
-    const normalizedNumbers = numbers.map(num => Number(num.toFixed(maxDecimals)));
-
-    normalizedNumbers.forEach(num => {
-        const lastChar = num.toString().slice(-1); // Get the last digit
-        const lastDigit = parseInt(lastChar, 10);
-        digitCounts[lastDigit]++;
-    });
-
-    const percentages = digitCounts.map(count => (count / totalNumbers) * 100);
-    return percentages;
 }

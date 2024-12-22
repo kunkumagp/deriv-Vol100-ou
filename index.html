@@ -13,42 +13,80 @@
 <body>
     <div class="container" style="text-align: center;">
         <h1>WebSocket Ticks Trading</h1>
-        <div style="max-width: 300px; margin: auto;">
+        <div style="max-width: 600px; margin: auto;">
             <select class="form-control" id="tradeOption">
                 <option value="rf_1">Rise & Fall</option>
                 <option value="ou_1">OVER UNDER</option>
-                <option value="ou_2">OVER UNDER 2</option>
+                <option value="ou_2"selected>OVER UNDER 2</option>
                 <option value="ou_3">OVER UNDER 3</option>
-                <option value="acmlt_1"selected>Accumulator</option>
+                <option value="acmlt_1">Accumulator</option>
                 <option value="md_1">Matches/Differs</option>
             </select>
             <br/>
-                <select class="form-control" id="marketOption">
-                    <option value="R_10">Volitility Index 10</option>
-                    <option value="R_25"selected>Volitility Index 25</option>
-                    <option value="R_50">Volitility Index 50</option>
-                    <option value="R_75">Volitility Index 75</option>
-                    <option value="R_100">Volitility Index 100</option>
-                </select>
-            <div class="row sub">
-                <br/>
-                <!-- <select class="form-control" id="marketOption">
-                    <option value="R_10">Volitility Index 10</option>
-                    <option value="R_25"selected>Volitility Index 25</option>
-                    <option value="R_50">Volitility Index 50</option>
-                    <option value="R_75">Volitility Index 75</option>
-                    <option value="R_100">Volitility Index 100</option>
-                </select> -->
-                <br/>
+            <div class="row">
+                <div class="col-md-6">
+                    Market
+                    <select class="form-control" id="marketOption">
+                        <option value="R_10">Volatility Index 10</option>
+                        <option value="R_25">Volatility Index 25</option>
+                        <option value="R_50">Volatility Index 50</option>
+                        <option value="R_75">Volatility Index 75</option>
+                        <option value="R_100"selected>Volatility Index 100</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-control hide" id="percentage">
+                        <option value="0.01">1%</option>
+                        <option value="0.02">2%</option>
+                        <option value="0.03">3%</option>
+                        <option value="0.04">4%</option>
+                        <option value="0.05">5%</option>
+                    </select>
+                    Last Digit Perdiction
+                    <select class="form-control" id="ldp">
+                        <option value="1">1</option>
+                        <option value="2"selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    Stake (USD): <input class="form-control" id="stake" placeholder="1 USD" value="10"/>
+                </div>
+                
             </div>
-            <div class="row sub">
+            <!-- <br/>
+                <select class="form-control" id="marketOption">
+                    <option value="R_10">Volatility Index 10</option>
+                    <option value="R_25"selected>Volatility Index 25</option>
+                    <option value="R_50">Volatility Index 50</option>
+                    <option value="R_75">Volatility Index 75</option>
+                    <option value="R_100">Volatility Index 100</option>
+                </select> -->
+            <!-- <div class="row sub">
+                <br/>
+                <select class="form-control" id="marketOption">
+                    <option value="R_10">Volatility Index 10</option>
+                    <option value="R_25"selected>Volatility Index 25</option>
+                    <option value="R_50">Volatility Index 50</option>
+                    <option value="R_75">Volatility Index 75</option>
+                    <option value="R_100">Volatility Index 100</option>
+                </select>
+                <br/>
+            </div> -->
+            <!-- <div class="row sub">
                 <div class="col-md-6">
                     Stake (USD): <input class="form-control" id="stake" placeholder="1 USD" value="1"/>
                 </div>
                 <div class="col-md-6">
                     Profit Rate (%): <input class="form-control" id="rate" placeholder="40" value="63"/>
                 </div>
-            </div>
+            </div> -->
             
             
             <br/>
@@ -57,7 +95,9 @@
         <br/>
         <div class="row">
             <div class="col-md-6">
-                <pre  style="text-align: left;">Initial Account Balance : <span id="initialAccBalance">$0</span><br/><br/>-----------------------------<br/><br/>Total Trade Count: <span id="totalTradeCount">0</span> <br/>Win Count: <span id="winCount">0</span> <br/>Loss Count: <span id="lossCount">0</span> <br/><br/>-----------------------------<br/><br/>Total Profit: <span id="totalProfit">$0</span> <br/>Total Loss: <span id="totalLoss">$0</span> <br/><br/>-----------------------------<br/><br/>Current Loss Amount: <span id="currentLossAmount">$0</span> <br/>Current Profit : <span id="currentProfitAmount">$0</span>  <br/></pre>
+                <pre  style="text-align: left;">Initial Account Balance : <span id="initialAccBalance">$0</span><br/>New Account Balance : <span id="newAccBalance">$0</span><br/><br/>-----------------------------<br/><br/>Total Trade Count: <span id="totalTradeCount">0</span> <br/>Win Count: <span id="winCount">0</span> <br/>Loss Count: <span id="lossCount">0</span> <br/><br/>-----------------------------<br/><br/>Total Profit: <span id="totalProfit">$0</span> <br/>Total Loss: <span id="totalLoss">$0</span> <br/><br/>-----------------------------<br/><br/>Current Loss Amount: <span id="currentLossAmount">$0</span> <br/>Current Profit : <span id="currentProfitAmount">$0</span>  <br/></pre>
+                <br/>
+                <div id="countdown" class="hide"></div>
             </div>
             <div class="col-md-6"><pre id="output" style="text-align: left; max-height: 700px;"></pre></div>
         </div>
