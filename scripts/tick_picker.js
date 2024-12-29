@@ -10,6 +10,7 @@ const startButton = document.getElementById('startWebSocket');
 const signalDiv = document.getElementById('signal');
 const activeElement = Array.from(marketElements).find(el => el.classList.contains("active"));
 const totalResults = document.getElementById('totalResults');
+const output = document.getElementById('output'); // For displaying WebSocket messages
 
 let isRunning = false, isTradeOpen = false;
 let initialStake = 1;
@@ -36,12 +37,17 @@ let ws,
     lossTradeCount = 0,
     lossAmount = 0,
     lostCountInRow = 0,
-    putTrade = null
+    putTrade = null,
+    tradeProposal = null
 ;
 let stakeForTrade = initialStake;
 let tickCountdown = initialTickCountdown;
 
 market = activeElement.id
+
+document.addEventListener("DOMContentLoaded", function(){
+    output.scrollTop = output.scrollHeight;
+});
 
 
 // Add a click event listener to each element
@@ -82,7 +88,7 @@ function webSocketConnectionStart(){
     isRunning = true;
     startWebSocket();
     console.log('WebSocket connection started.');
-    document.getElementById('output').textContent += 'WebSocket connection started.\n';
+    output.textContent += 'WebSocket connection started.\n';
     startButton.innerHTML = "Stop WebSocket";
 };
 
@@ -94,7 +100,7 @@ function webSocketConnectionStop(){
         ws = null;
     }
     console.log('WebSocket connection stopped.');
-    document.getElementById('output').textContent += 'WebSocket connection stopped.\n';
+    output.textContent += 'WebSocket connection stopped.\n';
     startButton.innerHTML = "Start WebSocket";
 };
 
@@ -150,7 +156,8 @@ function startWebSocket() {
         };
 
         if (response.msg_type === 'proposal') {
-            makeTheTrade(response);
+            tradeProposal = response;
+            makeTheTrade();
 
             
             // if(response.echo_req.contract_type == "CALL"){
@@ -206,17 +213,15 @@ function startWebSocket() {
                     const spanColor = newProfit > 0 ? 'green' : 'red';
                     reportUpdate(totalTradeCount, winTradeCount, lossTradeCount, totalProfitAmount, totalLossAmount, lossAmount, newProfit, initialAccBalance);
 
-
-                    signalMessage('Wait for another trade...');
-
-
                     isTradeOpen = false;
                     stakeChange(result);
 
-                    
-                    setTimeout(() => {
-                        reset();
-                    }, lostCountInRow >= 2 ? 10000 : 3000);
+                    if(lostCountInRow >= 2){
+                        reset(15000);
+                    } else {
+                        reset(10000);
+                    }
+
 
                 } else { setTimeout(() => {fetchTradeDetails(lastTradeId);}, 2000); }
 
@@ -230,7 +235,7 @@ function startWebSocket() {
 
     // Functions
 
-    const reset = () => {
+    const reset = (time) => {
         callTrade = null;
         putTrade = null;
         tickCountdown = initialTickCountdown;
@@ -239,8 +244,12 @@ function startWebSocket() {
         tickCount = null;
         currentTickValue = null;
         previousTickValue = null;
-        signalMessage('Start ticking...');
-        startTicks();
+        // signalMessage('Wait for another trade...');
+        signalMessage('');
+        setTimer(time)
+        setTimeout(() => {
+            startTicks();
+        }, time + 2);
         // placeRiseFallTrade('CALL', stakeForTrade);
 
     };
@@ -263,10 +272,14 @@ function startWebSocket() {
 
     // Subscribe to tick updates
     const startTicks = () => {
-        ws.send(JSON.stringify({
-            ticks: market,
-            subscribe: 1,
-        }));
+        setTimeout(() => {
+            signalMessage('Start ticking...');
+
+            ws.send(JSON.stringify({
+                ticks: market,
+                subscribe: 1,
+            }));
+        }, 2000);
     };
     
     // Unsubscribe to tick updates
@@ -303,8 +316,6 @@ function startWebSocket() {
                 console.log('downCount - ', downCount);
                 stopTicks();
 
-            // 
-
 
                 if(upCount < downCount){
                     console.log('Signal : SELL');
@@ -319,7 +330,7 @@ function startWebSocket() {
                     // makeTheTrade(callTrade, currentTickValue);
                     placeRiseFallTrade('CALL', stakeForTrade);
                 } else if(upCount == downCount){
-                    reset();
+                    reset(0);
                 }
             }
 
@@ -348,12 +359,12 @@ function startWebSocket() {
 
     };
 
-    const makeTheTrade = (object) => {
-        // console.log('object - ', object);
+    const makeTheTrade = () => {
+        // console.log('tradeProposal - ', tradeProposal);
         
         buyRequest = {
-            buy: object.proposal.id,
-            price: object.proposal.ask_price,
+            buy: tradeProposal.proposal.id,
+            price: tradeProposal.proposal.ask_price,
         };
         ws.send(JSON.stringify(buyRequest));
     };
@@ -398,6 +409,7 @@ function startWebSocket() {
 
     const reportUpdate = (totalTradeCount, winCount, lossCount, totalProfit, totalLoss, currentLossAmount, currentProfitAmount, initialAccBalance) => {
         // const totalResults = document.getElementById('totalResults'); // For displaying WebSocket messages
+
 
         // document.getElementById('initialAccBalance').innerHTML = response.authorize.balance;
         document.getElementById('totalTradeCount').innerHTML = totalTradeCount;
@@ -448,6 +460,8 @@ function startWebSocket() {
             document.getElementById('currentProfitAmount').innerHTML = `<span style="color: green; font-weight: 900;">$${currentProfitAmount}</span>`;
         }
 
+
+        output.scrollTop = output.scrollHeight;
 
     };
 
