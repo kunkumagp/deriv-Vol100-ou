@@ -15,6 +15,19 @@ function setTimer (time){
       }, 1000);
 }
 
+function getTimeCountDown (time){
+    var timeleft = (time / 1000);
+    var downloadTimer = setInterval(function(){
+        if(timeleft <= 0){
+          clearInterval(downloadTimer);
+        }
+        timeleft -= 1;
+      }, 1000);
+
+      return downloadTimer;
+    
+}
+
 
 // Calculate last digit percentages
 function calculateLastDigitPercentages(numbers) {
