@@ -126,7 +126,7 @@ function startWebSocket() {
         if (response.msg_type === 'authorize') {
             console.log('Authorization successful.');
             initialAccBalance = response.authorize.balance;
-            document.getElementById('initialAccBalance').innerHTML = initialAccBalance;
+            document.getElementById('initialAccBalance').innerHTML = `$${initialAccBalance}`;
             // makeTrades();
             // setTimer(10000);
             
@@ -239,7 +239,7 @@ function startWebSocket() {
         tickCount = null;
         currentTickValue = null;
         previousTickValue = null;
-        signalMessage('Preparing proposals...');
+        signalMessage('Start ticking...');
         startTicks();
         // placeRiseFallTrade('CALL', stakeForTrade);
 
@@ -301,30 +301,25 @@ function startWebSocket() {
             } else if(tickCount == 10){
                 console.log('upCount - ', upCount);
                 console.log('downCount - ', downCount);
-                console.log('tickCount - ', tickCount);
                 stopTicks();
 
             // 
 
 
                 if(upCount < downCount){
-                    console.log('SELL');
+                    console.log('Signal : SELL');
                     signal = 'PUT';
                     signalMessage('SELL');
                     // makeTheTrade(putTrade, currentTickValue);
                     placeRiseFallTrade('PUT', stakeForTrade);
                 } else if(upCount > downCount){
-                    console.log('BUY');
+                    console.log('Signal : BUY');
                     signal = 'CALL';
                     signalMessage('BUY');
                     // makeTheTrade(callTrade, currentTickValue);
                     placeRiseFallTrade('CALL', stakeForTrade);
                 } else if(upCount == downCount){
-                    signalMessage(null);
-                    setTimer(6000);
-                    setTimeout(() => {
-                        reset();
-                    }, 6000);
+                    reset();
                 }
             }
 
