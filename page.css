@@ -1,0 +1,68 @@
+body {
+  background-color: rgb(29, 29, 29);
+  color: #fff;
+}
+
+pre,
+button.btn-default,
+.form-control {
+  background-color: rgb(52, 52, 52);
+  border: none;
+  color: #fff;
+}
+
+.info {
+  background-color: rgb(52, 52, 52);
+  border: none;
+  color: #fff;
+  text-align: left;
+  padding: 20px;
+}
+
+.info div {
+  margin: 010px 0;
+}
+
+button.btn-default:hover,
+button.btn-default:active,
+button.btn-default.active,
+button.btn-default.active:hover,
+button.btn-default:focus {
+  background-color: rgb(41, 36, 36);
+  border: none !important;
+  color: #fff;
+}
+
+button.btn-default.active:hover {
+  background-color: rgb(16, 14, 14);
+  border: none !important;
+  color: #fff;
+}
+
+#countdown,
+#signal {
+  color: #6f6f6f;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+#signal span {
+  color: #ffffff;
+}
+
+.messages {
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hide{
+    display: none;
+    transition: all 1s ease-out;
+}
+
+.show{
+    display: block;
+    transition: all 1s ease-out;
+}

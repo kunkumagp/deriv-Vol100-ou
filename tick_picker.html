@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="page.css">
 </head>
 <body>
     <div class="container" style="text-align: center;">
@@ -24,8 +25,11 @@
     </div>
 
     <div class="container" style="margin-top: 25px; text-align: center;">
-        <div id="countdown" class="hide"></div>
-        <div id="signal" class="hide"></div>
+        <div class="messages">
+            <div id="countdown" class="hide"></div>
+            <div id="signal" class="hide"></div>
+        </div>
+
         <br/>
         <div class="row">
             <div class="col-md-6"><pre  style="text-align: left;">Initial Account Balance : <span id="initialAccBalance">$0</span><br/>New Account Balance : <span id="newAccBalance">$0</span><br/><br/>-----------------------------<br/><br/>Total Trade Count: <span id="totalTradeCount">0</span> <br/>Win Count: <span id="winCount">0</span> <br/>Loss Count: <span id="lossCount">0</span> <br/><br/>-----------------------------<br/><br/>Total Profit: <span id="totalProfit">$0</span> <br/>Total Loss: <span id="totalLoss">$0</span> <br/><br/>-----------------------------<br/><br/>Current Loss Amount: <span id="currentLossAmount">$0</span> <br/>Current Profit : <span id="currentProfitAmount">$0</span>  <br/></pre></div>

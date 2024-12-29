@@ -28,6 +28,9 @@ function getTimeCountDown (time){
     
 }
 
+function roundToTwoDecimals(value) {
+    return Math.round(value * 100) / 100;
+}
 
 // Calculate last digit percentages
 function calculateLastDigitPercentages(numbers) {
